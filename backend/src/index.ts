@@ -19,14 +19,42 @@ app.use(express.urlencoded({ extended: true }));
 // Static directory for uploaded candidate videos
 app.use('/uploads', express.static(path.resolve(process.cwd(), config.storage.localDir)));
 
+import fs from 'fs';
+
 // Serve Telegram Mini App (Web App) with multiple fallback paths
 app.use('/app', express.static(path.resolve(process.cwd(), 'public/app')));
 app.use('/app', express.static(path.resolve(__dirname, 'public/app')));
 app.use('/app', express.static(path.resolve(__dirname, '../public/app')));
 
-// Direct Admin Panel Route
+// Direct Admin Panel Route with multi-path resolver
 app.get('/admin', (req, res) => {
-  res.sendFile(path.resolve(process.cwd(), 'public/app/admin.html'));
+  const candidates = [
+    path.resolve(process.cwd(), 'public/app/admin.html'),
+    path.resolve(__dirname, 'public/app/admin.html'),
+    path.resolve(__dirname, '../public/app/admin.html'),
+    path.resolve(__dirname, '../../public/app/admin.html'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) {
+      return res.sendFile(p);
+    }
+  }
+  res.status(404).send('Admin panel file not found');
+});
+
+// Direct App Route
+app.get('/app', (req, res) => {
+  const candidates = [
+    path.resolve(process.cwd(), 'public/app/index.html'),
+    path.resolve(__dirname, 'public/app/index.html'),
+    path.resolve(__dirname, '../public/app/index.html'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) {
+      return res.sendFile(p);
+    }
+  }
+  res.status(404).send('Mini App file not found');
 });
 
 // Root redirect to Mini App
