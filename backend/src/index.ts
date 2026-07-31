@@ -41,9 +41,66 @@ app.get('/ready', async (req, res) => {
   }
 });
 
+// Auto-seed the database on first start if empty
+async function autoSeed() {
+  try {
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    const companyCount = await prisma.company.count();
+    if (companyCount === 0) {
+      console.log('🌱 Seeding initial data...');
+      // Seed companies
+      const companies = [
+        { name: 'Marketing Markazi', city: 'Toshkent', isActive: true },
+        { name: 'Digital Pro', city: 'Toshkent', isActive: true },
+        { name: 'Reklama Express', city: 'Samarqand', isActive: true },
+        { name: 'Media Group', city: 'Toshkent', isActive: true },
+        { name: 'Brand Studio', city: 'Toshkent', isActive: true },
+      ];
+      for (const c of companies) {
+        await prisma.company.create({ data: c });
+      }
+      const allCompanies = await prisma.company.findMany();
+      // Seed questions
+      const questions = [
+        { code: 'full_name', textUz: 'Sizning to\'liq ismingiz (F.I.Sh.)?', answerType: 'TEXT', sortOrder: 1 },
+        { code: 'phone', textUz: 'Telefon raqamingiz?', answerType: 'PHONE', sortOrder: 2 },
+        { code: 'age', textUz: 'Yoshingiz?', answerType: 'NUMBER', sortOrder: 3 },
+        { code: 'city', textUz: 'Qaysi shahar/tumanda yashaysiz?', answerType: 'TEXT', sortOrder: 4 },
+        { code: 'experience', textUz: 'Marketing sohasida tajribangiz bormi?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Ha, bor', 'Yo\'q, yangi boshlayman']), sortOrder: 5 },
+        { code: 'education', textUz: 'Ta\'lim darajangiz?', answerType: 'CHOICE', optionsJson: JSON.stringify(['O\'rta', 'O\'rta maxsus', 'Oliy']), sortOrder: 6 },
+        { code: 'why_us', textUz: 'Nega aynan bizning kompaniyaga ishlamoqchisiz?', answerType: 'TEXT', sortOrder: 7 },
+        { code: 'skills', textUz: 'Qanday ko\'nikma va bilimlaringiz bor?', answerType: 'TEXT', sortOrder: 8 },
+        { code: 'salary', textUz: 'Kutilayotgan oylik maosh?', answerType: 'TEXT', sortOrder: 9 },
+        { code: 'start_date', textUz: 'Qachondan ishni boshlashingiz mumkin?', answerType: 'TEXT', sortOrder: 10 },
+      ];
+      for (const q of questions) {
+        await prisma.question.create({ data: { ...q, isRequired: true, isActive: true } });
+      }
+      // Seed vacancies
+      const vacancyTitles = ['SMM mutaxassisi', 'Kontent menejeri', 'Targetolog', 'Dizayner', 'Copywriter'];
+      for (const company of allCompanies) {
+        for (const title of vacancyTitles.slice(0, 2)) {
+          await prisma.vacancy.create({
+            data: { companyId: company.id, title, isActive: true, videoRequired: true }
+          });
+        }
+      }
+      // Seed referral sources
+      await prisma.referralSource.create({ data: { code: 'telegram', name: 'Telegram', channel: 'Telegram' } });
+      await prisma.referralSource.create({ data: { code: 'instagram', name: 'Instagram', channel: 'Instagram' } });
+      console.log('✅ Seed complete!');
+    }
+    await prisma.$disconnect();
+  } catch (err: any) {
+    console.error('⚠️ Auto-seed skipped:', err.message);
+  }
+}
+
 // Start Express Server
-app.listen(config.port, () => {
+app.listen(config.port, async () => {
   console.log(`🚀 Marketing Markazi HR Backend API running on port ${config.port}`);
+  await autoSeed();
 });
 
 // Launch Telegram Bot
