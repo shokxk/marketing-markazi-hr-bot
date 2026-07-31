@@ -10,7 +10,448 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  
+  <style>
+    :root {
+      --primary: #FF5A36;
+      --primary-hover: #E04826;
+      --primary-light: rgba(255, 90, 54, 0.12);
+      --bg-gradient: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+      --card-bg: rgba(30, 41, 59, 0.85);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-dark: #F8FAFC;
+      --text-muted: #94A3B8;
+      --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.2);
+      --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.4);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-pill: 999px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-dark);
+      min-height: 100vh;
+      padding-bottom: 90px;
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Header */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(15, 23, 42, 0.85);
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-badge {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #FF5A36, #FF8E53);
+      color: #fff;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      box-shadow: 0 4px 16px rgba(255, 90, 54, 0.4);
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #fff;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: var(--primary-light);
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      border: 1px solid rgba(255, 90, 54, 0.3);
+    }
+
+    /* Hero Banner */
+    .hero-banner {
+      margin: 16px 20px;
+      padding: 24px 20px;
+      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+      color: #fff;
+      border-radius: var(--radius-lg);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--card-border);
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -30%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(255, 90, 54, 0.35) 0%, rgba(255, 90, 54, 0) 70%);
+      border-radius: 50%;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(255, 90, 54, 0.2);
+      border: 1px solid rgba(255, 90, 54, 0.4);
+      color: #FF7A5C;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .hero-banner h2 {
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .hero-banner p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .hero-btn {
+      padding: 12px 22px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-pill);
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(255, 90, 54, 0.4);
+      transition: var(--transition);
+    }
+
+    .hero-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Catalog Section */
+    .catalog-section, .applications-section, .support-section {
+      padding: 10px 20px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .section-header h2 {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .view-all {
+      font-size: 13px;
+      color: var(--primary);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Filter Chips */
+    .filter-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      scrollbar-width: none;
+    }
+
+    .filter-chips::-webkit-scrollbar { display: none; }
+
+    .chip {
+      padding: 8px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .chip.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(255, 90, 54, 0.4);
+    }
+
+    /* Vacancy Grid & Cards */
+    .vacancy-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 6px;
+    }
+
+    .vacancy-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .company-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .company-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .tag-pill {
+      padding: 4px 10px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #F87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .vacancy-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .vacancy-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 14px;
+      border-top: 1px dashed var(--card-border);
+    }
+
+    .salary-text {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .apply-btn {
+      padding: 8px 16px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 12px rgba(255, 90, 54, 0.3);
+    }
+
+    .btn-secondary {
+      padding: 8px 14px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #CBD5E1;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* Modal Overlay & Card */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      background: #1E293B;
+      border-top-left-radius: 28px;
+      border-top-right-radius: 28px;
+      padding: 24px;
+      position: relative;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--card-border);
+      max-height: 90vh;
+      overflow-y: auto;
+      color: #fff;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: none; font-size: 16px;
+      cursor: pointer; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .progress-bar-container {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-pill);
+      overflow: hidden; margin-bottom: 8px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #FF5A36, #FF8E53);
+      border-radius: var(--radius-pill);
+      transition: width 0.4s ease;
+    }
+
+    .progress-text {
+      display: flex; justify-content: space-between;
+      font-size: 12px; font-weight: 700; color: var(--text-muted);
+    }
+
+    .question-text {
+      font-size: 17px; font-weight: 800; margin-bottom: 16px; line-height: 1.4;
+    }
+
+    .custom-input {
+      width: 100%; padding: 14px 16px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 2px solid var(--card-border);
+      border-radius: var(--radius-md);
+      font-size: 15px; color: #fff; outline: none;
+    }
+
+    .custom-input:focus { border-color: var(--primary); }
+
+    .choice-options { display: flex; flex-direction: column; gap: 10px; }
+
+    .choice-btn {
+      padding: 14px 16px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 2px solid var(--card-border);
+      border-radius: var(--radius-md);
+      font-size: 14px; font-weight: 700; text-align: left;
+      cursor: pointer; color: #fff; transition: var(--transition);
+    }
+
+    .choice-btn.selected, .choice-btn:active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .wizard-footer { display: flex; gap: 12px; margin-top: 24px; }
+    .btn-primary { flex: 1; padding: 14px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-md); font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: 0 4px 14px rgba(255, 90, 54, 0.4); }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%; max-width: 480px; height: 72px;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--card-border);
+      display: flex; justify-content: space-around; align-items: center;
+      z-index: 90; padding: 0 10px;
+    }
+
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      background: none; border: none; color: var(--text-muted);
+      font-size: 11px; font-weight: 700; cursor: pointer;
+      padding: 8px 16px; border-radius: var(--radius-pill); transition: var(--transition);
+    }
+
+    .nav-item.active { color: var(--primary); background: var(--primary-light); }
+    .nav-icon { font-size: 20px; }
+    .hidden { display: none !important; }
+    .full-width { width: 100%; }
+    .text-center { text-align: center; }
+  </style>
 </head>
 <body>
   <div id="app" class="app-container">
@@ -39,7 +480,7 @@
           <p>O'zbekistonning yetakchi marketing kompaniyalarida vakansiyalar</p>
           <button class="hero-btn" onclick="scrollToVacancies()">Vakansiyalarni ko'rish →</button>
         </div>
-      </div>
+      </section>
 
       <!-- VACANCY CATALOG -->
       <section class="catalog-section" id="vacanciesSection">
@@ -51,46 +492,36 @@
         <!-- Filter Chips -->
         <div class="filter-chips" id="filterChips">
           <button class="chip active" onclick="filterVacancies('all')">✨ Barchasi</button>
-          <button class="chip" onclick="filterVacancies('Toshkent')">📍 Toshkent</button>
-          <button class="chip" onclick="filterVacancies('SMM')">📱 SMM</button>
-          <button class="chip" onclick="filterVacancies('Dizayn')">🎨 Dizayn</button>
+          <button class="chip" onclick="filterVacancies('Quva')">📍 Quva</button>
+          <button class="chip" onclick="filterVacancies('Call Center')">📱 Call Center</button>
+          <button class="chip" onclick="filterVacancies('Sotuv')">🎨 Sotuv</button>
         </div>
 
         <!-- Vacancy Grid -->
         <div class="vacancy-grid" id="vacancyGrid">
-          <!-- Skeleton Loading -->
-          <div class="vacancy-card skeleton"></div>
-          <div class="vacancy-card skeleton"></div>
+          <!-- Dynamically Loaded Cards -->
         </div>
       </section>
 
-      <!-- MY APPLICATIONS SECTION (Hidden by default) -->
+      <!-- MY APPLICATIONS SECTION -->
       <section class="applications-section hidden" id="applicationsSection">
         <div class="section-header">
           <h2>📋 Mening Arizalarim</h2>
         </div>
         <div class="applications-list" id="applicationsList">
-          <div class="empty-state">
-            <div class="empty-icon">📂</div>
-            <h3>Arizalar topilmadi</h3>
-            <p>Hali hech qaysi vakansiyaga ariza topshirmagansiz</p>
-          </div>
+          <!-- Loaded dynamically -->
         </div>
       </section>
 
-      <!-- SUPPORT SECTION (Hidden by default) -->
+      <!-- SUPPORT SECTION -->
       <section class="support-section hidden" id="supportSection">
-        <div class="support-card glass">
-          <div class="support-avatar">💬</div>
-          <h2>HR Yordam Xizmati</h2>
-          <p>Savollaringiz bormi yoki ko'mak kerakmi? Biz bilan bog'laning:</p>
-          <a href="https://t.me/HR_MarketingMarkazi" target="_blank" class="support-btn">
+        <div class="vacancy-card glass text-center" style="padding:28px 20px;">
+          <div style="font-size:40px; margin-bottom:10px;">💬</div>
+          <h2 style="font-size:20px; font-weight:800; margin-bottom:8px;">HR Yordam Xizmati</h2>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">Savollaringiz bormi? HR menejerimiz bilan bog'laning:</p>
+          <a href="https://t.me/HR_MarketingMarkazi" target="_blank" class="btn-primary" style="display:inline-block; text-decoration:none; padding:12px 24px;">
             ✈️ @HR_MarketingMarkazi ga yozish
           </a>
-          <div class="support-info">
-            <span>⏰ Ish vaqti: 09:00 - 18:00</span>
-            <span>📍 Toshkent shahri</span>
-          </div>
         </div>
       </section>
     </main>
@@ -107,7 +538,7 @@
           </div>
         </div>
 
-        <div id="detailBodyText" style="font-size:13px; line-height:1.6; white-space:pre-line; color:var(--text-dark); margin-bottom:20px;">
+        <div id="detailBodyText" style="font-size:13px; line-height:1.6; white-space:pre-line; color:#E2E8F0; margin-bottom:20px;">
           <!-- Loaded dynamically -->
         </div>
 
@@ -120,21 +551,18 @@
       <div class="modal-card glass">
         <button class="modal-close" onclick="closeModal()">✕</button>
 
-        <!-- Progress Header -->
         <div class="wizard-header">
-          <div class="vacancy-badge-title" id="modalVacancyTitle">Vakansiya Nomi</div>
+          <div class="vacancy-badge-title" id="modalVacancyTitle" style="color:var(--primary); font-weight:800; font-size:14px; margin-bottom:8px;">Flourenza — Call Center Sotuv Menejeri</div>
           <div class="progress-bar-container">
-            <div class="progress-bar-fill" id="progressBarFill" style="width: 10%;"></div>
+            <div class="progress-bar-fill" id="progressBarFill" style="width: 5%;"></div>
           </div>
           <div class="progress-text">
-            <span id="progressStep">Bosqich 1/10</span>
-            <span id="progressPercent">10%</span>
+            <span id="progressStep">Bosqich 1/20</span>
+            <span id="progressPercent">5%</span>
           </div>
         </div>
 
-        <!-- Wizard Question Body -->
         <div class="wizard-body" id="wizardBody">
-          <!-- Animated Question Container -->
           <div class="question-container" id="questionContainer">
             <h3 class="question-text" id="questionText">Ismingiz nima?</h3>
             <div class="question-input-wrapper" id="questionInputWrapper">
@@ -143,7 +571,6 @@
           </div>
         </div>
 
-        <!-- Wizard Navigation -->
         <div class="wizard-footer">
           <button class="btn-secondary" id="btnPrev" onclick="prevQuestion()" disabled>← Orqaga</button>
           <button class="btn-primary" id="btnNext" onclick="nextQuestion()">Keyingisi →</button>
@@ -153,10 +580,10 @@
 
     <!-- SUCCESS MODAL -->
     <div class="modal-overlay hidden" id="successModal">
-      <div class="modal-card glass text-center">
-        <div class="success-icon">🎉</div>
-        <h2>Arizangiz Qabul Qilindi!</h2>
-        <p>Tabriklaymiz! Arizangiz amoCRM va HR bo'limiga yuborildi. HR menejerimiz tez orada siz bilan bog'lanadi.</p>
+      <div class="modal-card glass text-center" style="padding:32px 20px;">
+        <div style="font-size:48px; margin-bottom:12px;">🎉</div>
+        <h2 style="font-size:20px; font-weight:800; margin-bottom:8px;">Arizangiz Qabul Qilindi!</h2>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">Tabriklaymiz! Arizangiz amoCRM va Telegram HR-Gruppasiga yuborildi. HR menejerimiz tez orada bog'lanadi.</p>
         <button class="btn-primary full-width" onclick="closeSuccessModal()">Azo'l! Bosh sahifaga qaytish</button>
       </div>
     </div>

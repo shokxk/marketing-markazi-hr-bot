@@ -6,43 +6,145 @@
   <title>Admin Dashboard — Vacancy & Logo Manager</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  
   <style>
-    .admin-container { padding: 20px; max-width: 520px; margin: 0 auto; }
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-weight: 700; font-size: 13px; margin-bottom: 6px; }
-    .form-control { width: 100%; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: var(--radius-md); font-size: 14px; background: var(--card-bg); color: var(--text-dark); }
-    .badge-admin { background: #FF5A36; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
-    .vacancy-admin-item { padding: 14px; background: var(--card-bg); border-radius: var(--radius-md); border: 1px solid var(--card-border); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    :root {
+      --primary: #FF5A36;
+      --primary-hover: #E04826;
+      --bg-gradient: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+      --card-bg: rgba(30, 41, 59, 0.85);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-dark: #F8FAFC;
+      --text-muted: #94A3B8;
+      --radius-lg: 20px;
+      --radius-md: 12px;
+      --radius-pill: 999px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-dark);
+      min-height: 100vh;
+      padding: 20px 16px 60px 16px;
+    }
+
+    .admin-container {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .header-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .badge-admin {
+      background: linear-gradient(135deg, #FF5A36, #FF8E53);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(255, 90, 54, 0.3);
+    }
+
+    .vacancy-admin-item {
+      padding: 16px;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--card-border);
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .form-box {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--card-border);
+    }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-weight: 700; font-size: 13px; margin-bottom: 6px; color: #CBD5E1; }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      background: rgba(15, 23, 42, 0.8);
+      color: #fff;
+      outline: none;
+    }
+
+    .form-control:focus { border-color: var(--primary); }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(255, 90, 54, 0.4);
+    }
+
+    .btn-secondary {
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <div class="admin-container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2>💼 HR Admin Boshqaruvi</h2>
-      <span class="badge-admin">MARKETING MARKAZI</span>
+    <div class="header-box">
+      <div>
+        <h2 style="font-size:20px; font-weight:800;">💼 HR Admin Panel</h2>
+        <span style="font-size:12px; color:var(--primary); font-weight:700;">Marketing Markazi</span>
+      </div>
+      <span class="badge-admin">ADMIN ACCESS</span>
     </div>
 
     <!-- Active Vacancies List -->
     <div style="margin-bottom:28px;">
-      <h3 style="font-size:16px; margin-bottom:12px;">📋 Mavjud Vakansiyalar Boshqaruvi</h3>
+      <h3 style="font-size:16px; margin-bottom:14px; font-weight:800;">📋 Mavjud Vakansiyalar</h3>
       <div id="adminVacancyList">
         <div class="vacancy-admin-item">
           <div>
-            <strong>Flourenza — Call Center Sotuv Menejeri</strong>
-            <div style="font-size:12px; color:var(--text-muted);">Quva Tolmozor | 4 mln fiks + KPI</div>
+            <strong style="font-size:15px; color:#fff;">Flourenza — Call Center Sotuv Menejeri</strong>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">📍 Quva Tolmozor | 💰 4 000 000 UZS fiks + KPI</div>
           </div>
           <div style="display:flex; gap:6px;">
-            <button class="btn-secondary" style="padding:6px 10px; font-size:12px;" onclick="editVacancy('flourenza_1')">✏️ Tahrirlash</button>
-            <button class="btn-secondary" style="padding:6px 10px; font-size:12px; color:#EF4444;" onclick="deleteVacancy('flourenza_1')">🗑 O'chirish</button>
+            <button class="btn-secondary" onclick="editVacancy('flourenza_1')">✏️ Tahrirlash</button>
+            <button class="btn-secondary" style="color:#F87171;" onclick="deleteVacancy('flourenza_1')">🗑 O'chirish</button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Add / Edit Form -->
-    <div style="border-top:1px dashed var(--card-border); padding-top:20px;">
-      <h3 style="font-size:16px; margin-bottom:14px;">➕ Yangi Vakansiya Yaratish / TZ</h3>
+    <div class="form-box">
+      <h3 style="font-size:16px; margin-bottom:16px; font-weight:800; color:var(--primary);">➕ Yangi Vakansiya & TZ Yaratish</h3>
       <form id="tzForm" onsubmit="handleCreateVacancy(event)">
         <div class="form-group">
           <label>1. Kompaniya Nomi (Brend)</label>
@@ -89,7 +191,7 @@
           <input type="text" id="schedule" class="form-control" value="6/1 (07:00-17:00 / 08:00-18:00 / 09:00-19:00)">
         </div>
 
-        <button type="submit" class="btn-primary full-width" style="margin-top: 14px;">
+        <button type="submit" class="btn-primary" style="margin-top: 10px;">
           🚀 E'lonni Chop Etish (Mini App ga chiqarish)
         </button>
       </form>

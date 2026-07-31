@@ -19,8 +19,20 @@ app.use(express.urlencoded({ extended: true }));
 // Static directory for uploaded candidate videos
 app.use('/uploads', express.static(path.resolve(process.cwd(), config.storage.localDir)));
 
-// Serve Telegram Mini App (Web App)
+// Serve Telegram Mini App (Web App) with multiple fallback paths
 app.use('/app', express.static(path.resolve(process.cwd(), 'public/app')));
+app.use('/app', express.static(path.resolve(__dirname, 'public/app')));
+app.use('/app', express.static(path.resolve(__dirname, '../public/app')));
+
+// Direct Admin Panel Route
+app.get('/admin', (req, res) => {
+  res.sendFile(path.resolve(process.cwd(), 'public/app/admin.html'));
+});
+
+// Root redirect to Mini App
+app.get('/', (req, res) => {
+  res.redirect('/app');
+});
 
 // Register API routes
 app.use('/api/companies', companyRouter);
