@@ -206,6 +206,37 @@
   </div>
 
   <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      loadAdminVacancies();
+    });
+
+    async function loadAdminVacancies() {
+      const container = document.getElementById('adminVacancyList');
+      try {
+        const res = await fetch('/api/webapp/vacancies');
+        const data = await res.json();
+        const list = data.vacancies || [];
+        if (list.length === 0) {
+          container.innerHTML = '<div style="font-size:13px; color:var(--text-muted);">Hozircha vakansiyalar yo\'q</div>';
+          return;
+        }
+        container.innerHTML = list.map(v => `
+          <div class="vacancy-admin-item">
+            <div>
+              <strong style="font-size:15px; color:#fff;">${v.company} — ${v.title}</strong>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">📍 ${v.city} | 💰 ${v.salary}</div>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-secondary" onclick="editVacancy('${v.id}')">✏️ Tahrirlash</button>
+              <button class="btn-secondary" style="color:#F87171;" onclick="deleteVacancy('${v.id}')">🗑 O'chirish</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading vacancies:', err);
+      }
+    }
+
     async function handleCreateVacancy(e) {
       e.preventDefault();
       const payload = {
@@ -226,7 +257,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        alert('✅ Vakansiya va Logotip muvaffaqiyatli saqlandi!');
+        alert('✅ Vakansiya muvaffaqiyatli saqlandi va Mini App da paydo bo\'ldi!');
+        loadAdminVacancies();
         window.location.href = '/app';
       } catch (err) {
         alert('Vakansiya saqlandi!');
@@ -239,7 +271,7 @@
         try {
           await fetch('/api/admin/vacancies/delete/' + id, { method: 'POST' });
           alert('✅ Vakansiya o\'chirildi');
-          window.location.reload();
+          loadAdminVacancies();
         } catch (e) {
           alert('Vakansiya arxivlandi');
         }

@@ -210,14 +210,11 @@ app.get('/ready', async (req, res) => {
   }
 });
 
-// Auto-seed database with official Flourenza company and vacancy
+// Auto-seed database with official Flourenza company and vacancy if missing
 async function autoSeed() {
   try {
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
-    
-    // Clear old demo companies
-    await prisma.company.deleteMany({ where: { name: { not: 'Flourenza' } } });
     
     let flourenza = await prisma.company.findFirst({ where: { name: 'Flourenza' } });
     if (!flourenza) {
