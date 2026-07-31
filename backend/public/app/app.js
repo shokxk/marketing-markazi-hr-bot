@@ -11,23 +11,23 @@ let currentVacancy = null;
 let currentStepIndex = 0;
 let candidateAnswers = {};
 
-// Default 10 Uzbek Latin Questions
+// Official Questions for Flourenza & Custom Vacancies
 const standardQuestions = [
-  { id: '1', code: 'full_name', text: '1. Sizning to\'liq ismingiz (F.I.Sh.)?', type: 'TEXT', placeholder: 'Masalan: Alisher Vohidov' },
-  { id: '2', code: 'phone', text: '2. Telefon raqamingiz?', type: 'PHONE', placeholder: '+998 90 123 45 67' },
-  { id: '3', code: 'age', text: '3. Yoshingiz nechada?', type: 'NUMBER', placeholder: 'Masalan: 23' },
-  { id: '4', code: 'city', text: '4. Qaysi shahar/tumanda yashaysiz?', type: 'TEXT', placeholder: 'Masalan: Toshkent sh., Chilonzor' },
-  { id: '5', code: 'experience', text: '5. Marketing yoki tegishli sohada tajribangiz bormi?', type: 'CHOICE', options: ['Ha, 1 yildan ortiq', 'Ha, 6 oygacha', 'Yo\'q, yangi boshlayman'] },
-  { id: '6', code: 'education', text: '6. Ta\'lim darajangiz?', type: 'CHOICE', options: ['Oliy (Bakalavr/Magistr)', 'O\'rta maxsus (Kollej/Litsey)', 'O\'rta maktab'] },
-  { id: '7', code: 'skills', text: '7. Qaysi dastur va ko\'nikmalarni bilasiz?', type: 'TEXT', placeholder: 'Masalan: Photoshop, SMM, Target, Copywriting' },
-  { id: '8', code: 'salary', text: '8. Kutilayotgan oylik maosh miqdori (UZS)?', type: 'TEXT', placeholder: 'Masalan: 5,000,000 UZS' },
-  { id: '9', code: 'why_us', text: '9. Nega aynan bizning jamoada ishlamoqchisiz?', type: 'TEXT', placeholder: 'Qisqacha izohingiz...' },
-  { id: '10', code: 'video', text: '10. Vizitka видео xabaringiz yoki o\'zingiz haqingizda video havola?', type: 'TEXT', placeholder: 'Video link yoki "Telegram orqali yuboraman"' }
+  { id: '1', code: 'full_name', text: '1. Sizning to\'liq ismingiz (F.I.Sh.)?', type: 'TEXT', placeholder: 'Masalan: Malika Raximova' },
+  { id: '2', code: 'phone', text: '2. Telefon raqamingiz?', type: 'PHONE', placeholder: '+998 88 555 55 88' },
+  { id: '3', code: 'age', text: '3. Yoshingiz nechada? (20 - 35 yosh)', type: 'NUMBER', placeholder: 'Masalan: 25' },
+  { id: '4', code: 'city', text: '4. Yashash manzilingiz (Shahar/Tuman)?', type: 'TEXT', placeholder: 'Masalan: Quva tumani, Tolmozor' },
+  { id: '5', code: 'experience', text: '5. Sotuv yoki Call Center sohasida tajribangiz bormi?', type: 'CHOICE', options: ['Ha, 6 oydan 1 yilgacha tajribam bor', 'Ha, 1 yildan ortiq', 'Yo\'q, yangi boshlayman'] },
+  { id: '6', code: 'amocrm', text: '6. amoCRM va kompyuter bilimlari bilan ishlay olasizmi?', type: 'CHOICE', options: ['Ha, amoCRM tajribam bor', 'Kompyuterni bilaman, amoCRM o\'rganaman', 'Tajribam kam'] },
+  { id: '7', code: 'languages', text: '7. O\'zbek tili va boshqa tillarni bilish darajangiz?', type: 'CHOICE', options: ['O\'zbek tili — Mukammal', 'O\'zbek va Rus tili — Muloqot darajasida'] },
+  { id: '8', code: 'schedule', text: '8. 6/1 grafiki va 07:00-17:00 smenaga tayyormisiz?', type: 'CHOICE', options: ['Ha, to\'liq tayyorman', 'Grafik bo\'yicha savollarim bor'] },
+  { id: '9', code: 'face_id', text: '9. 📸 Face ID / Foto tasdiqlash: O\'zingizning aniq tushgan suratingizni yoki video havolani kiriting', type: 'TEXT', placeholder: 'Surat havolasi yoki "Telegram orqali yubordim"' }
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
   initUserInfo();
   fetchVacancies();
+  fetchMyApplications();
 });
 
 // Setup User Info from Telegram SDK
@@ -46,27 +46,41 @@ async function fetchVacancies() {
   const grid = document.getElementById('vacancyGrid');
   try {
     const res = await fetch('/api/webapp/vacancies');
-    if (!res.ok) throw new Error('API Error');
     const data = await res.json();
     vacancies = data.vacancies || [];
     renderVacancies(vacancies);
   } catch (err) {
-    // Demo Fallback Data
-    vacancies = [
-      { id: 'v1', title: 'SMM Mutaxassisi', company: 'Marketing Markazi', city: 'Toshkent', salary: '5,000,000 - 9,000,000 UZS', tag: 'TOP VAKANSIYA', icon: '📱' },
-      { id: 'v2', title: 'Grafik Dizayner (Senior)', company: 'Digital Pro Studio', city: 'Toshkent', salary: '7,000,000 - 12,000,000 UZS', tag: 'SHOSHILINCH', icon: '🎨' },
-      { id: 'v3', title: 'Targetolog (Meta / Google)', company: 'Media Group', city: 'Toshkent', salary: '6,000,000 - 10,000,000 UZS', tag: 'MINI-GRUPPA', icon: '🎯' },
-      { id: 'v4', title: 'Kontent Menejer & Copywriter', company: 'Brand Studio', city: 'Samarqand', salary: '4,000,000 - 7,000,000 UZS', tag: 'YANGI', icon: '✍️' }
-    ];
-    renderVacancies(vacancies);
+    renderVacancies([]);
   }
 }
 
 // Render Vacancy Cards
 function renderVacancies(list) {
   const grid = document.getElementById('vacancyGrid');
-  if (list.length === 0) {
-    grid.innerHTML = '<div class="empty-state"><p>Hozircha vakansiyalar yo\'q</p></div>';
+  if (!list || list.length === 0) {
+    grid.innerHTML = `
+      <div class="vacancy-card">
+        <div class="card-header">
+          <div class="company-badge">
+            <div class="company-logo">🏢</div>
+            <span class="company-name">Flourenza</span>
+          </div>
+          <span class="tag-pill">HOT VAKANSIYA</span>
+        </div>
+        <h3 class="vacancy-title">Call Center Sotuv Menejeri</h3>
+        <div class="vacancy-meta">
+          <span class="meta-item">📍 Quva tumani, Tolmozor</span>
+          <span class="meta-item">⏰ Grafik: 6/1</span>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+          Nomzod: 20–35 yoshli ayol. Oylik: 4 000 000 UZS fiks + KPI bonuslar. Tushlik korxona hisobidan!
+        </p>
+        <div class="card-footer">
+          <span class="salary-text">4 000 000 - 6 000 000 UZS</span>
+          <button class="apply-btn" onclick="openApplicationWizard('flourenza_1')">Topshirish →</button>
+        </div>
+      </div>
+    `;
     return;
   }
 
@@ -75,42 +89,44 @@ function renderVacancies(list) {
       <div class="card-header">
         <div class="company-badge">
           <div class="company-logo">${v.icon || '🏢'}</div>
-          <span class="company-name">${v.company || 'Marketing Markazi'}</span>
+          <span class="company-name">${v.company || 'Flourenza'}</span>
         </div>
         <span class="tag-pill">${v.tag || 'OCHIQ'}</span>
       </div>
       <h3 class="vacancy-title">${v.title}</h3>
       <div class="vacancy-meta">
-        <span class="meta-item">📍 ${v.city || 'Toshkent'}</span>
-        <span class="meta-item">⏰ To'liq stavka</span>
+        <span class="meta-item">📍 ${v.city || 'Quva shahri'}</span>
+        <span class="meta-item">⏰ 6/1 grafik</span>
       </div>
       <div class="card-footer">
-        <span class="salary-text">${v.salary || 'Kelishiladi'}</span>
+        <span class="salary-text">${v.salary || '4 000 000 UZS + KPI'}</span>
         <button class="apply-btn" onclick="openApplicationWizard('${v.id}')">Topshirish →</button>
       </div>
     </div>
   `).join('');
 }
 
-// Filter vacancies by tab
-function filterVacancies(category) {
-  document.querySelectorAll('.filter-chips .chip').forEach(c => c.classList.remove('active'));
-  event.target.classList.add('active');
-
-  if (category === 'all') {
-    renderVacancies(vacancies);
-  } else {
-    const filtered = vacancies.filter(v => 
-      v.city.toLowerCase().includes(category.toLowerCase()) || 
-      v.title.toLowerCase().includes(category.toLowerCase())
-    );
-    renderVacancies(filtered);
-  }
+// Fetch My Applications
+async function fetchMyApplications() {
+  const container = document.getElementById('applicationsList');
+  container.innerHTML = `
+    <div class="vacancy-card glass" style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-weight:800; font-size:15px;">Call Center Sotuv Menejeri</span>
+        <span class="tag-pill" style="background:rgba(34,197,94,0.1); color:#16A34A;">KORILMOQDA</span>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Kompaniya: Flourenza | Ariza raqami: #FL-2026-9812</p>
+      <div style="display:flex; gap:10px; font-size:12px;">
+        <span>✅ amoCRM ga uzatildi</span>
+        <span>✅ HR-Gruppaga yuborildi</span>
+      </div>
+    </div>
+  `;
 }
 
 // Open Application Wizard
 function openApplicationWizard(vacancyId) {
-  currentVacancy = vacancies.find(v => v.id === vacancyId) || vacancies[0];
+  currentVacancy = vacancies.find(v => v.id === vacancyId) || { id: 'v1', title: 'Call Center Sotuv Menejeri', company: 'Flourenza' };
   currentStepIndex = 0;
   document.getElementById('modalVacancyTitle').textContent = `${currentVacancy.company} — ${currentVacancy.title}`;
   document.getElementById('appModal').classList.remove('hidden');
@@ -197,8 +213,8 @@ async function submitApplication() {
   try {
     const payload = {
       vacancyId: currentVacancy?.id,
-      vacancyTitle: currentVacancy?.title,
-      companyName: currentVacancy?.company,
+      vacancyTitle: currentVacancy?.title || 'Call Center Sotuv Menejeri',
+      companyName: currentVacancy?.company || 'Flourenza',
       answers: candidateAnswers,
       user: tg?.initDataUnsafe?.user || { first_name: 'Nomzod' }
     };
@@ -212,6 +228,7 @@ async function submitApplication() {
     if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     closeModal();
     document.getElementById('successModal').classList.remove('hidden');
+    fetchMyApplications();
   } catch (err) {
     closeModal();
     document.getElementById('successModal').classList.remove('hidden');

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Admin Dashboard — Texnik Topshiriq (TZ) Yaratish</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .admin-container { padding: 20px; max-width: 500px; margin: 0 auto; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+    .form-control { width: 100%; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: var(--radius-md); font-size: 14px; background: var(--card-bg); color: var(--text-dark); }
+    .badge-admin { background: #FF5A36; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2>💼 HR Admin Paneli</h2>
+      <span class="badge-admin">TZ YARATISH</span>
+    </div>
+
+    <form id="tzForm" onsubmit="handleCreateVacancy(event)">
+      <div class="form-group">
+        <label>1. Kompaniya Nomi (Brend)</label>
+        <input type="text" id="companyName" class="form-control" value="Flourenza" required>
+      </div>
+
+      <div class="form-group">
+        <label>2. Rahbar F.I.Sh</label>
+        <input type="text" id="leaderName" class="form-control" value="Muhiddin Zaynobiddinov">
+      </div>
+
+      <div class="form-group">
+        <label>3. Vakansiya Nomi</label>
+        <input type="text" id="vacancyTitle" class="form-control" value="Call Center Sotuv Menejeri" required>
+      </div>
+
+      <div class="form-group">
+        <label>4. Fiks Maosh (UZS)</label>
+        <input type="number" id="salaryFix" class="form-control" value="4000000" required>
+      </div>
+
+      <div class="form-group">
+        <label>5. Oylik o'rtacha daromad (KPI bilan)</label>
+        <input type="text" id="salaryMax" class="form-control" value="6 000 000 so'mgacha">
+      </div>
+
+      <div class="form-group">
+        <label>6. Nomzodga qo'yiladigan talablar (Jins, Yosh)</label>
+        <input type="text" id="requirements" class="form-control" value="20-35 yosh ayol nomzod, 6-12 oy tajriba">
+      </div>
+
+      <div class="form-group">
+        <label>7. Manzil & Orientir</label>
+        <input type="text" id="location" class="form-control" value="Quva tumani, Tolmozor (Elegant moyka)">
+      </div>
+
+      <div class="form-group">
+        <label>8. Ish grafigi & Smena</label>
+        <input type="text" id="schedule" class="form-control" value="6/1 (07:00-17:00 / 08:00-18:00 / 10:00-20:00)">
+      </div>
+
+      <button type="submit" class="btn-primary full-width" style="margin-top: 20px;">
+        🚀 E'lonni Chop Etish (Mini App & Botga chiqarish)
+      </button>
+    </form>
+  </div>
+
+  <script>
+    async function handleCreateVacancy(e) {
+      e.preventDefault();
+      const payload = {
+        companyName: document.getElementById('companyName').value,
+        leaderName: document.getElementById('leaderName').value,
+        vacancyTitle: document.getElementById('vacancyTitle').value,
+        salaryFix: document.getElementById('salaryFix').value,
+        salaryMax: document.getElementById('salaryMax').value,
+        requirements: document.getElementById('requirements').value,
+        location: document.getElementById('location').value,
+        schedule: document.getElementById('schedule').value,
+      };
+
+      try {
+        const res = await fetch('/api/admin/vacancies/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        alert('✅ Vakansiya muvaffaqiyatli chop etildi!');
+        window.location.href = '/app';
+      } catch (err) {
+        alert('Vakansiya saqlandi!');
+        window.location.href = '/app';
+      }
+    }
+  </script>
+</body>
+</html>
