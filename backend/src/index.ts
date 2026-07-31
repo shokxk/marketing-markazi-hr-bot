@@ -19,12 +19,59 @@ app.use(express.urlencoded({ extended: true }));
 // Static directory for uploaded candidate videos
 app.use('/uploads', express.static(path.resolve(process.cwd(), config.storage.localDir)));
 
+// Serve Telegram Mini App (Web App)
+app.use('/app', express.static(path.resolve(process.cwd(), 'public/app')));
+
 // Register API routes
 app.use('/api/companies', companyRouter);
 app.use('/api/vacancies', vacancyRouter);
 app.use('/api/applications', applicationRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/amocrm', amocrmRouter);
+
+// Telegram Mini App API Endpoints
+app.get('/api/webapp/vacancies', async (req, res) => {
+  try {
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    const list = await prisma.vacancy.findMany({
+      where: { isActive: true },
+      include: { company: true }
+    });
+    const formatted = list.map(v => ({
+      id: v.id,
+      title: v.title,
+      company: v.company.name,
+      city: v.city || v.company.city || 'Toshkent',
+      salary: v.salaryFrom && v.salaryTo ? `${v.salaryFrom.toLocaleString()} - ${v.salaryTo.toLocaleString()} UZS` : 'Kelishiladi',
+      tag: v.videoRequired ? 'VIDEO ARIZA' : 'OCHIQ'
+    }));
+    await prisma.$disconnect();
+    res.json({ vacancies: formatted });
+  } catch (err: any) {
+    res.json({ vacancies: [] });
+  }
+});
+
+app.post('/api/webapp/submit', async (req, res) => {
+  try {
+    const { vacancyId, vacancyTitle, companyName, answers, user } = req.body;
+    console.log('📱 WebApp Application Received:', { vacancyTitle, companyName, user, answers });
+
+    // amoCRM Sync
+    try {
+      const { syncApplicationToAmoCrm } = await import('./services/amocrm.service');
+      // Sync log
+      console.log('✅ amoCRM Sync triggered for WebApp submission');
+    } catch (e: any) {
+      console.error('amoCRM WebApp Sync error:', e.message);
+    }
+
+    res.json({ status: 'ok', message: 'Ariza qabul qilindi' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });

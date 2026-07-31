@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Marketing Markazi HR — Telegram Mini App</title>
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="logo-badge">MM</div>
+        <div class="brand-text">
+          <h1 class="brand-title">Marketing Markazi</h1>
+          <span class="brand-subtitle">HR Mini-App</span>
+        </div>
+      </div>
+      <div class="user-pill" id="userPill">
+        <span class="user-avatar" id="userAvatar">👤</span>
+        <span class="user-name" id="userName">Nomzod</span>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="main-content" id="mainContent">
+      <!-- HERO BANNER -->
+      <section class="hero-banner">
+        <div class="hero-content">
+          <span class="hero-tag">🔥 Top Vakansiyalar 2026</span>
+          <h2>Orzuyingizdagi ishni 2 daqiqada toping</h2>
+          <p>O'zbekistonning yetakchi marketing kompaniyalarida vakansiyalar</p>
+          <button class="hero-btn" onclick="scrollToVacancies()">Vakansiyalarni ko'rish →</button>
+        </div>
+      </div>
+
+      <!-- VACANCY CATALOG -->
+      <section class="catalog-section" id="vacanciesSection">
+        <div class="section-header">
+          <h2>🌸 Ochiq Vakansiyalar</h2>
+          <span class="view-all">Barchasi →</span>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="filter-chips" id="filterChips">
+          <button class="chip active" onclick="filterVacancies('all')">✨ Barchasi</button>
+          <button class="chip" onclick="filterVacancies('Toshkent')">📍 Toshkent</button>
+          <button class="chip" onclick="filterVacancies('SMM')">📱 SMM</button>
+          <button class="chip" onclick="filterVacancies('Dizayn')">🎨 Dizayn</button>
+        </div>
+
+        <!-- Vacancy Grid -->
+        <div class="vacancy-grid" id="vacancyGrid">
+          <!-- Skeleton Loading -->
+          <div class="vacancy-card skeleton"></div>
+          <div class="vacancy-card skeleton"></div>
+        </div>
+      </section>
+
+      <!-- MY APPLICATIONS SECTION (Hidden by default) -->
+      <section class="applications-section hidden" id="applicationsSection">
+        <div class="section-header">
+          <h2>📋 Mening Arizalarim</h2>
+        </div>
+        <div class="applications-list" id="applicationsList">
+          <div class="empty-state">
+            <div class="empty-icon">📂</div>
+            <h3>Arizalar topilmadi</h3>
+            <p>Hali hech qaysi vakansiyaga ariza topshirmagansiz</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SUPPORT SECTION (Hidden by default) -->
+      <section class="support-section hidden" id="supportSection">
+        <div class="support-card glass">
+          <div class="support-avatar">💬</div>
+          <h2>HR Yordam Xizmati</h2>
+          <p>Savollaringiz bormi yoki ko'mak kerakmi? Biz bilan bog'laning:</p>
+          <a href="https://t.me/HR_MarketingMarkazi" target="_blank" class="support-btn">
+            ✈️ @HR_MarketingMarkazi ga yozish
+          </a>
+          <div class="support-info">
+            <span>⏰ Ish vaqti: 09:00 - 18:00</span>
+            <span>📍 Toshkent shahri</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- APPLICATION WIZARD MODAL -->
+    <div class="modal-overlay hidden" id="appModal">
+      <div class="modal-card glass">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+
+        <!-- Progress Header -->
+        <div class="wizard-header">
+          <div class="vacancy-badge-title" id="modalVacancyTitle">Vakansiya Nomi</div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressBarFill" style="width: 10%;"></div>
+          </div>
+          <div class="progress-text">
+            <span id="progressStep">Bosqich 1/10</span>
+            <span id="progressPercent">10%</span>
+          </div>
+        </div>
+
+        <!-- Wizard Question Body -->
+        <div class="wizard-body" id="wizardBody">
+          <!-- Animated Question Container -->
+          <div class="question-container" id="questionContainer">
+            <h3 class="question-text" id="questionText">Ismingiz nima?</h3>
+            <div class="question-input-wrapper" id="questionInputWrapper">
+              <input type="text" id="wizardInput" class="custom-input" placeholder="Javobingizni kiriting...">
+            </div>
+          </div>
+        </div>
+
+        <!-- Wizard Navigation -->
+        <div class="wizard-footer">
+          <button class="btn-secondary" id="btnPrev" onclick="prevQuestion()" disabled>← Orqaga</button>
+          <button class="btn-primary" id="btnNext" onclick="nextQuestion()">Keyingisi →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div class="modal-overlay hidden" id="successModal">
+      <div class="modal-card glass text-center">
+        <div class="success-icon">🎉</div>
+        <h2>Arizangiz Qabul Qilindi!</h2>
+        <p>Tabriklaymiz! Arizangiz amoCRM va HR bo'limiga yuborildi. HR menejerimiz tez orada siz bilan bog'lanadi.</p>
+        <button class="btn-primary full-width" onclick="closeSuccessModal()">Azo'l! Bosh sahifaga qaytish</button>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" onclick="switchTab('vacancies', this)">
+        <span class="nav-icon">🔍</span>
+        <span class="nav-label">Vakansiyalar</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('applications', this)">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">Arizalarim</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('support', this)">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">Qo'llab-quvvatlash</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

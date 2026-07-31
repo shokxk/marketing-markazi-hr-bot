@@ -2,15 +2,15 @@ import { Keyboard, InlineKeyboard } from 'grammy';
 import { t } from '../locales/i18n';
 
 export function getMainMenuKeyboard(lang = 'uz') {
+  const webAppUrl = process.env.RENDER_EXTERNAL_URL ? `${process.env.RENDER_EXTERNAL_URL}/app` : 'https://marketing-markazi-hr-bot.onrender.com/app';
   return new Keyboard()
+    .webApp('📱 Mini App (Vakansiyalar & HR UI)', webAppUrl)
+    .row()
     .text(t('btn_start_anketa', lang))
     .text(t('btn_vacancies', lang))
     .row()
     .text(t('btn_status', lang))
-    .text(t('btn_draft', lang))
-    .row()
     .text(t('btn_help', lang))
-    .text(t('btn_change_lang', lang))
     .resized();
 }
 

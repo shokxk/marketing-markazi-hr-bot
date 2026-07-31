@@ -4,7 +4,7 @@
   "description": "Backend API, Telegram Bot engine, and queue workers for Marketing Markazi HR Bot",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc --skipLibCheck && copyfiles -u 1 src/locales/**/* dist/",
+    "build": "tsc --skipLibCheck && copyfiles -u 1 src/locales/**/* dist/ && copyfiles -u 1 public/**/* dist/",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "test": "ts-node tests/run-tests.ts",
