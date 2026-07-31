@@ -42,20 +42,17 @@ app.get('/admin', (req, res) => {
   res.status(404).send('Admin panel file not found');
 });
 
-// Direct App Route
-app.get('/app', (req, res) => {
-  const candidates = [
-    path.resolve(process.cwd(), 'public/app/index.html'),
-    path.resolve(__dirname, 'public/app/index.html'),
-    path.resolve(__dirname, '../public/app/index.html'),
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) {
-      return res.sendFile(p);
-    }
+// Self Keep-Alive Pinger (Prevents Render Free Tier from sleeping 24/7/365)
+const RENDER_APP_URL = process.env.RENDER_EXTERNAL_URL || 'https://marketing-markazi-hr-bot.onrender.com';
+setInterval(async () => {
+  try {
+    const axios = (await import('axios')).default;
+    await axios.get(`${RENDER_APP_URL}/health`, { timeout: 10000 });
+    console.log(`⏰ Keep-alive ping sent to ${RENDER_APP_URL}/health — Server active 24/7`);
+  } catch (err: any) {
+    console.log('⏰ Keep-alive ping attempt:', err.message);
   }
-  res.status(404).send('Mini App file not found');
-});
+}, 5 * 60 * 1000); // Ping every 5 minutes
 
 // Root redirect to Mini App
 app.get('/', (req, res) => {
