@@ -1,0 +1,134 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Marketing Markazi HR Bot API",
+    "description": "REST API documentation for Telegram candidate management, amoCRM integration, video review, and Next.js admin panel.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "uptime": { "type": "number", "example": 124.5 },
+                    "timestamp": { "type": "string", "example": "2026-07-31T17:41:00Z" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Readiness probe endpoint",
+        "responses": {
+          "200": {
+            "description": "Database and Redis connection status"
+          }
+        }
+      }
+    },
+    "/api/companies": {
+      "get": {
+        "summary": "List all active client companies",
+        "responses": {
+          "200": {
+            "description": "Array of companies with vacancy count"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new client company",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "example": "Daler Boilers" },
+                  "city": { "type": "string", "example": "Toshkent" },
+                  "address": { "type": "string", "example": "Yashnobod t." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Company created successfully" }
+        }
+      }
+    },
+    "/api/vacancies": {
+      "get": {
+        "summary": "List active vacancies",
+        "parameters": [
+          { "name": "companyId", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Array of vacancies" }
+        }
+      }
+    },
+    "/api/applications": {
+      "get": {
+        "summary": "List candidate applications with filters",
+        "parameters": [
+          { "name": "companyId", "in": "query", "schema": { "type": "string" } },
+          { "name": "vacancyId", "in": "query", "schema": { "type": "string" } },
+          { "name": "minScore", "in": "query", "schema": { "type": "integer" } },
+          { "name": "hasVideo", "in": "query", "schema": { "type": "boolean" } },
+          { "name": "isDuplicate", "in": "query", "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": { "description": "Filtered application records" }
+        }
+      }
+    },
+    "/api/applications/export/excel": {
+      "get": {
+        "summary": "Export applications to Excel (.xlsx)",
+        "responses": {
+          "200": {
+            "description": "Binary Excel spreadsheet download",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/stats/overview": {
+      "get": {
+        "summary": "Get admin dashboard overview metrics",
+        "responses": {
+          "200": { "description": "Dashboard statistics summary" }
+        }
+      }
+    },
+    "/api/amocrm/webhook": {
+      "post": {
+        "summary": "amoCRM stage change webhook listener",
+        "responses": {
+          "200": { "description": "Webhook processed" }
+        }
+      }
+    }
+  }
+}

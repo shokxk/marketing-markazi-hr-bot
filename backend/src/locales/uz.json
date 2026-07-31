@@ -1,0 +1,114 @@
+{
+  "welcome_title": "🌟 <b>Marketing Markazi HR Botiga xush kelibsiz!</b>",
+  "welcome_msg": "Assalomu alaykum! 👋\n\n<b>🏆 Marketing Markazi HR-bot</b>\n\nUshbu bot orqali siz 30+ hamkor kompaniyalarimizdagi bo'sh ish o'rinlariga ariza topshirishingiz mumkin.\n\n📋 Anketani to'ldirish taxminan <b>5–7 daqiqa</b> vaqt oladi.\n🎥 Video tanishtiruv ham taqdim etishingiz so'raladi.\n\nBoshlashga tayyormisiz? 💪",
+  "btn_start_anketa": "📝 Anketani boshlash",
+  "btn_vacancies": "💼 Bo'sh ish o'rinlari",
+  "btn_status": "🔍 Arizam holati",
+  "btn_draft": "⏳ Tugallanmagan anketa",
+  "btn_help": "❓ Yordam",
+  "btn_change_lang": "🌐 Til o'zgartirish",
+
+  "welcome_photo_caption": "🏆 <b>Marketing Markazi</b> — O'zbekistondagi yetakchi marketing va biznes markazi.\n\nBiz 30+ kompaniya uchun professional xodimlar yig'amiz. Siz ham jamoamizga qo'shiling! 🚀",
+
+  "consent_title": "⚠️ <b>Shaxsiy ma'lumotlarga rozilik</b>",
+  "consent_text": "Anketani davom ettirish orqali siz:\n\n✅ Taqdim etgan ma'lumotlaringizni <b>ishga qabul qilish</b> jarayonida ko'rib chiqilishiga;\n✅ Ma'lumotlaringiz xavfsiz <b>saqlanishiga</b>;\n✅ Tegishli kompaniya vakillariga <b>taqdim etilishiga</b>\n\nrozilik bildirasiz.",
+  "btn_consent_yes": "✅ Roziman, davom etamiz",
+  "btn_consent_no": "❌ Rozimasman",
+  "consent_declined": "❌ Roziligingizsiz anketani qabul qila olmaymiz.\n\nKeyinroq fikringiz o'zgarsa, /start buyrug'i orqali qayta boshlashingiz mumkin.\n\n📞 Savollar bo'lsa: @HR_MarketingMarkazi",
+
+  "select_company_title": "<b>🏢 Qaysi kompaniyada ishlashni xohlaysiz?</b>\n\nKompaniyani ro'yxatdan tanlang 👇",
+  "btn_next_page": "➡️ Keyingi",
+  "btn_prev_page": "⬅️ Oldingi",
+  "btn_search_company": "🔍 Kompaniyani qidirish",
+  "btn_recommend_me": "💡 Menga tavsiya qiling",
+  "company_search_prompt": "🔍 Qidirayotgan kompaniya nomini yozing:\n\n<i>Masalan: Daler, Kichkina, Travel...</i>",
+  "company_not_found": "😔 Kechirasiz, siz qidirgan kompaniya topilmadi.\n\n🔄 Qayta urinib ko'ring yoki ro'yxatdan tanlang.",
+
+  "recommend_quiz_q1": "📍 <b>Qaysi shaharda ishlamoqchisiz?</b>",
+  "recommend_quiz_q2": "💼 <b>Qaysi yo'nalishda tajribangiz bor?</b>",
+  "recommend_quiz_q3": "🎯 <b>Qaysi lavozim sizga qiziq?</b>",
+  "recommend_result": "✨ Sizga mos keladigan kompaniyalar:",
+
+  "select_vacancy_title": "<b>💼 Qaysi lavozimga ariza topshirmoqchisiz?</b>",
+  "no_vacancies": "😔 Ushbu kompaniyada hozirda faol vakansiyalar mavjud emas.\n\nBoshqa kompaniyalarni ko'rish uchun orqaga qayting. ⬅️",
+
+  "btn_back": "⬅️ Orqaga",
+  "btn_cancel": "❌ Bekor qilish",
+  "btn_send_phone": "📱 Telefon raqamni yuborish",
+  "invalid_phone": "📱 Iltimos, to'g'ri O'zbekiston telefon raqamini kiriting!\n\n<i>Format: +998 XX XXX XX XX</i>",
+
+  "progress_bar_1": "▓░░░░░░░░░ 10%",
+  "progress_bar_2": "▓▓░░░░░░░░ 20%",
+  "progress_bar_3": "▓▓▓░░░░░░░ 30%",
+  "progress_bar_4": "▓▓▓▓░░░░░░ 40%",
+  "progress_bar_5": "▓▓▓▓▓░░░░░ 50%",
+  "progress_bar_6": "▓▓▓▓▓▓░░░░ 60%",
+  "progress_bar_7": "▓▓▓▓▓▓▓░░░ 70%",
+  "progress_bar_8": "▓▓▓▓▓▓▓▓░░ 80%",
+  "progress_bar_9": "▓▓▓▓▓▓▓▓▓░ 90%",
+  "progress_bar_10": "▓▓▓▓▓▓▓▓▓▓ 100% ✅",
+
+  "question_header": "📋 <b>Savol {current}/{total}</b>\n{progress}\n━━━━━━━━━━━━━━━━━━━━━\n\n",
+  "question_tip_name": "💡 <i>Masalan: Karimov Azizbek Anvar o'g'li</i>",
+  "question_tip_phone": "💡 <i>Telegram orqali kontakt yuboring yoki qo'lda yozing</i>",
+  "question_tip_intro": "💡 <i>Minimal 50 ta belgi. Kuchli tomonlaringizni ko'rsating!</i>",
+
+  "question_encouragement_1": "🔥 Ajoyib boshlanish!",
+  "question_encouragement_2": "👍 Zo'r javob! Davom eting...",
+  "question_encouragement_3": "✨ Yaxshi! Yana bir qadam.",
+  "question_encouragement_4": "💪 Siz zo'rsiz! Davom eting.",
+  "question_encouragement_5": "🚀 Yarmi tugadi! Shoshilmang.",
+  "question_encouragement_6": "⭐ Juda yaxshi ketyapsiz!",
+  "question_encouragement_7": "🎯 Deyarli tugadingiz!",
+  "question_encouragement_8": "🏆 Oxirgi savollar qoldi!",
+
+  "video_prompt": "🎥 <b>Endi video tanishtiruv yuboring!</b>\n\n📱 Telegram orqali <b>30–60 soniyalik</b> video xabar (🎭 kruglyash) yoki video fayl yuboring.\n\n<b>Videoda ayting:</b>\n1️⃣ Ism-familiyangiz\n2️⃣ Qaysi shaharda yashashingiz\n3️⃣ Qaysi vakansiyaga topshirayotganingiz\n4️⃣ Oldingi tajribangiz\n5️⃣ Nima uchun aynan sizni olishimiz kerak?\n\n<b>Tavsiya:</b>\n☀️ Yorug' joy | 🔇 Shovqinsiz | 📐 Kamera yuzingizga",
+  "btn_skip_video": "⏩ Keyinroq yuboraman",
+  "btn_video_sample": "🎬 Namuna ko'rish",
+  "video_invalid_format": "❌ Iltimos, aynan <b>video yoki Telegram video xabar (kruglyash) 🎭</b> yuboring.\n\nAudio yoki rasm qabul qilinmaydi.",
+  "video_too_long": "⏱ Video juda uzun!\n\nIltimos, <b>30–60 soniyalik</b> qisqa video yuboring.\nMaksimal davomiylik: 90 soniya.",
+  "video_sample_text": "🎬 <b>Video namunasi:</b>\n\n<i>«Assalomu alaykum! Men Azizbek Karimov. Qo'qon shahrida yashayman. Sotuv menejeri lavozimiga ariza topshirmoqdaman. Sotuv sohasida 1 yillik tajribam bor, amoCRM bilan ishlaganman. Sizning jamoangizga qo'shilishni juda xohlayman, chunki...»</i>",
+  "video_received": "✅ <b>Video muvaffaqiyatli qabul qilindi!</b> 🎉\n\nEndi anketangizni ko'rib chiqaylik 👀",
+
+  "preview_title": "<b>📋 Ma'lumotlaringizni tekshiring</b>\n━━━━━━━━━━━━━━━━━━━━━\n\n",
+  "btn_submit_app": "🚀 Arizani yuborish",
+  "btn_edit_app": "✏️ Ma'lumot o'zgartirish",
+  "btn_cancel_app": "🗑 Anketani bekor qilish",
+
+  "edit_choice_prompt": "✏️ <b>Qaysi bo'limni o'zgartirmoqchisiz?</b>",
+  "btn_edit_personal": "👤 Shaxsiy ma'lumotlar",
+  "btn_edit_experience": "💼 Tajriba & CRM",
+  "btn_edit_conditions": "💰 Ish shartlari",
+  "btn_edit_video": "🎥 Video tanishtiruv",
+
+  "app_submitting": "⏳ <b>Arizangiz yuborilmoqda...</b>\n\nJamoamiz ma'lumotlarni ko'rib chiqmoqda. Biroz kuting! 🔄",
+  "app_success_msg": "🎉 <b>Arizangiz muvaffaqiyatli qabul qilindi!</b>\n\n📌 Ariza raqami: <code>{appNumber}</code>\n\n🏢 Kompaniya: <b>{companyName}</b>\n💼 Vakansiya: <b>{vacancyName}</b>\n\n👥 HR mutaxassislarimiz anketangizni ko'rib chiqadi.\n⏱ Ko'rib chiqish muddati: <b>1–3 ish kuni</b>\n\n✨ <i>Sizga omad tilaymiz!</i> 🍀",
+
+  "duplicate_active_app": "⚠️ <b>Siz bu vakansiyaga avval ariza topshirgansiz!</b>\n\n📌 Ariza raqami: <code>{appNumber}</code>\n📊 Hozirgi holati: <b>{statusText}</b>",
+  "btn_update_info": "🔄 Ma'lumot yangilash",
+  "btn_select_other_vacancy": "💼 Boshqa vakansiya",
+
+  "draft_found_msg": "⏳ <b>Tugallanmagan anketangiz mavjud!</b>\n\n🏢 Kompaniya: <b>{companyName}</b>\n💼 Vakansiya: <b>{vacancyName}</b>\n📊 To'ldirilgan: <b>{percent}%</b>\n\nDavom etasizmi?",
+  "btn_continue_draft": "▶️ Davom etish",
+  "btn_restart_draft": "🔄 Qaytadan boshlash",
+  "btn_delete_draft": "🗑 O'chirish",
+  "draft_reminder_msg": "⏰ <b>Eslatma!</b>\n\nSiz vakansiya uchun anketani boshlagan edingiz, lekin yakunlamagansiz.\n\nAnketani davom ettirish uchun quyidagi tugmani bosing. 👇",
+
+  "source_question": "📣 <b>Vakansiya haqida qayerdan bildingiz?</b>",
+  "referred_by_question": "👤 <b>Sizni kim tavsiya qildi?</b>\n\n<i>Ism-familiya yoki telefon raqamini yozing</i>",
+
+  "status_check_prompt": "🔍 <b>Ariza holatingizni tekshirish</b>\n\nTelegram akkauntingiz orqali arizalaringiz ko'rsatiladi.",
+  "no_applications_found": "😔 Ushbu akkaunt bo'yicha hech qanday ariza topilmadi.\n\nYangi ariza topshirish uchun /start bosing.",
+
+  "help_text": "<b>🆘 Yordam kerakmi?</b>\n\nQuyidagi tugmalardan birini tanlang 👇",
+  "btn_cannot_fill": "📝 Anketani to'ldira olmayapman",
+  "btn_cannot_video": "🎥 Video yubora olmayapman",
+  "btn_vacancy_question": "💼 Vakansiya haqida savol",
+  "btn_contact_hr": "👨‍💼 HR bilan bog'lanish",
+  "hr_contact_info": "📞 <b>HR bo'limi:</b> @HR_MarketingMarkazi\n\nIstalgan savollaringiz bilan murojaat qilishingiz mumkin!",
+
+  "interview_invite": "🎉 <b>Tabriklaymiz!</b>\n\nAnketangiz birlamchi saralashdan o'tdi!\n\nSizni <b>telefon suhbatiga</b> taklif qilamiz.\nHR mutaxassisimiz tez orada bog'lanadi. 📞",
+  "offline_invite_title": "🏢 <b>Oflayn suhbatga taklif!</b>",
+  "rejection_msg": "Assalomu alaykum.\n\nVakansiyamizga bildirgan qiziqishingiz uchun rahmat! 🙏\n\nAyni vaqtda ushbu lavozim uchun boshqa nomzod tanlandi.\n\nMa'lumotlaringiz HR bazamizda saqlanadi — mos yangi vakansiya paydo bo'lsa, siz bilan bog'lanamiz. 💪\n\nKelgusi ishlaringizda muvaffaqiyat! ⭐",
+  "hire_msg": "🎉 <b>TABRIKLAYMIZ!</b> 🎊\n\nSiz <b>{companyName}</b> kompaniyasidagi <b>{vacancyName}</b> lavozimiga qabul qilindingiz!\n\nJamoamizga xush kelibsiz! 🚀"
+}
