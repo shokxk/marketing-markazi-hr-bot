@@ -144,11 +144,20 @@ function renderCurrentQuestion() {
   if (q.type === 'CHOICE') {
     wrapper.innerHTML = `
       <div class="choice-options">
-        ${q.options.map(opt => `
-          <button class="choice-btn ${candidateAnswers[q.code] === opt ? 'selected' : ''}" onclick="selectChoice('${q.code}', '${opt}')">${opt}</button>
+        ${q.options.map((opt, idx) => `
+          <button type="button" class="choice-btn ${candidateAnswers[q.code] === opt ? 'selected' : ''}" data-code="${q.code}" data-idx="${idx}">${opt}</button>
         `).join('')}
       </div>
     `;
+    wrapper.querySelectorAll('.choice-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const code = btn.getAttribute('data-code');
+        const idx = parseInt(btn.getAttribute('data-idx'));
+        candidateAnswers[code] = q.options[idx];
+        renderCurrentQuestion();
+      });
+    });
   } else {
     const val = candidateAnswers[q.code] || '';
     wrapper.innerHTML = `
