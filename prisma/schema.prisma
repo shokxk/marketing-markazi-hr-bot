@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         String   @default("HR_ADMIN")
+  companyIds   String   @default("[]")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("admin_users")
+}
+
+model User {
+  id               String        @id @default(uuid())
+  telegramUserId   BigInt        @unique
+  telegramUsername String?
+  fullName         String?
+  phone            String?
+  language         String        @default("uz")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  applications     Application[]
+
+  @@map("users")
+}
+
+model Company {
+  id              String        @id @default(uuid())
+  name            String
+  description     String?
+  logoUrl         String?
+  city            String?
+  address         String?
+  mapUrl          String?
+  amocrmCompanyId String?
+  responsibleHrId String?
+  telegramGroupId String?
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  vacancies       Vacancy[]
+  applications    Application[]
+
+  @@map("companies")
+}
+
+model Vacancy {
+  id                 String            @id @default(uuid())
+  companyId          String
+  company            Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title              String
+  description        String?
+  requirements       String?
+  salaryFrom         Int?
+  salaryTo           Int?
+  city               String?
+  address            String?
+  workSchedule       String?
+  experienceRequired String?
+  videoRequired      Boolean           @default(true)
+  isActive           Boolean           @default(true)
+  applicationLimit   Int?
+  createdAt          DateTime          @default(now())
+  closedAt           DateTime?
+  updatedAt          DateTime          @updatedAt
+  vacancyQuestions   VacancyQuestion[]
+  applications       Application[]
+
+  @@map("vacancies")
+}
+
+model Question {
+  id               String              @id @default(uuid())
+  code             String              @unique
+  textUz           String
+  textRu           String?
+  answerType       String              @default("TEXT")
+  optionsJson      String?
+  isRequired       Boolean             @default(true)
+  isActive         Boolean             @default(true)
+  sortOrder        Int                 @default(0)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  vacancyQuestions VacancyQuestion[]
+  answers          ApplicationAnswer[]
+
+  @@map("questions")
+}
+
+model VacancyQuestion {
+  vacancyId   String
+  questionId  String
+  isRequired  Boolean  @default(true)
+  customScore String?
+  vacancy     Vacancy  @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([vacancyId, questionId])
+  @@map("vacancy_questions")
+}
+
+model Application {
+  id                 String   @id @default(uuid())
+  applicationNumber  String   @unique
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId          String
+  company            Company  @relation(fields: [companyId], references: [id])
+  vacancyId          String
+  vacancy            Vacancy  @relation(fields: [vacancyId], references: [id])
+  status             String   @default("DRAFT")
+  currentStep        Int      @default(1)
+  completionPercent  Int      @default(0)
+  score              Int      @default(0)
+  aiSummary          String?
+  source             String?  @default("Telegram Direct")
+  referralCode       String?
+  amocrmLeadId       String?
+  amocrmContactId    String?
+  videoUrl           String?
+  videoDuration      Int?
+  consentGiven       Boolean  @default(false)
+  isDuplicate        Boolean  @default(false)
+  lastReminderSentAt DateTime?
+  createdAt          DateTime @default(now())
+  submittedAt        DateTime?
+  updatedAt          DateTime @updatedAt
+
+  answers            ApplicationAnswer[]
+  statusHistory      StatusHistory[]
+  botMessages        BotMessage[]
+
+  @@map("applications")
+}
+
+model ApplicationAnswer {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  questionId    String
+  question      Question    @relation(fields: [questionId], references: [id])
+  answerText    String?
+  answerJson    String?
+  createdAt     DateTime    @default(now())
+
+  @@map("application_answers")
+}
+
+model StatusHistory {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  oldStatus     String?
+  newStatus     String
+  changedBy     String?     @default("SYSTEM")
+  changedAt     DateTime    @default(now())
+
+  @@map("status_history")
+}
+
+model BotMessage {
+  id                String       @id @default(uuid())
+  userId            String
+  applicationId     String?
+  application       Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  messageType       String
+  telegramMessageId Int
+  sentAt            DateTime     @default(now())
+  deliveryStatus    String       @default("SENT")
+
+  @@map("bot_messages")
+}
+
+model ReferralSource {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  channel     String?
+  clickCount  Int      @default(0)
+  submitCount Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@map("referral_sources")
+}
