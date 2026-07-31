@@ -399,13 +399,25 @@
 
     .custom-input {
       width: 100%; padding: 14px 16px;
-      background: rgba(15, 23, 42, 0.8);
-      border: 2px solid var(--card-border);
-      border-radius: var(--radius-md);
-      font-size: 15px; color: #fff; outline: none;
+      background: #1E293B !important;
+      border: 2px solid var(--card-border) !important;
+      border-radius: var(--radius-md) !important;
+      font-size: 15px !important;
+      font-weight: 700 !important;
+      color: #FFFFFF !important;
+      outline: none !important;
     }
 
-    .custom-input:focus { border-color: var(--primary); }
+    .custom-input::placeholder {
+      color: #94A3B8 !important;
+      opacity: 0.7;
+    }
+
+    .custom-input:focus {
+      border-color: var(--primary) !important;
+      background: #0F172A !important;
+      color: #FFFFFF !important;
+    }
 
     .choice-options { display: flex; flex-direction: column; gap: 10px; }
 
