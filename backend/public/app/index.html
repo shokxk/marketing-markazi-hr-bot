@@ -95,6 +95,26 @@
       </section>
     </main>
 
+    <!-- VACANCY DETAIL MODAL -->
+    <div class="modal-overlay hidden" id="detailModal">
+      <div class="modal-card glass" style="max-height:90vh; overflow-y:auto;">
+        <button class="modal-close" onclick="closeDetailModal()">✕</button>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <img id="detailCompanyLogo" src="" alt="Logo" style="width:48px; height:48px; border-radius:12px; object-fit:cover;">
+          <div>
+            <h2 id="detailVacancyTitle" style="font-size:18px; font-weight:800;">Call Center Sotuv Menejeri</h2>
+            <span id="detailCompanyName" style="font-size:13px; color:var(--primary); font-weight:700;">Flourenza</span>
+          </div>
+        </div>
+
+        <div id="detailBodyText" style="font-size:13px; line-height:1.6; white-space:pre-line; color:var(--text-dark); margin-bottom:20px;">
+          <!-- Loaded dynamically -->
+        </div>
+
+        <button class="btn-primary full-width" id="btnDetailApply" onclick="startApplicationFromDetail()">🚀 Ariza Topshirish (Anketa to'ldirish)</button>
+      </div>
+    </div>
+
     <!-- APPLICATION WIZARD MODAL -->
     <div class="modal-overlay hidden" id="appModal">
       <div class="modal-card glass">

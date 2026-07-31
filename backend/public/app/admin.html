@@ -3,70 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Admin Dashboard — Texnik Topshiriq (TZ) Yaratish</title>
+  <title>Admin Dashboard — Vacancy & Logo Manager</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <style>
-    .admin-container { padding: 20px; max-width: 500px; margin: 0 auto; }
-    .form-group { margin-bottom: 16px; }
+    .admin-container { padding: 20px; max-width: 520px; margin: 0 auto; }
+    .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-weight: 700; font-size: 13px; margin-bottom: 6px; }
     .form-control { width: 100%; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: var(--radius-md); font-size: 14px; background: var(--card-bg); color: var(--text-dark); }
     .badge-admin { background: #FF5A36; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .vacancy-admin-item { padding: 14px; background: var(--card-bg); border-radius: var(--radius-md); border: 1px solid var(--card-border); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
   </style>
 </head>
 <body>
   <div class="admin-container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2>💼 HR Admin Paneli</h2>
-      <span class="badge-admin">TZ YARATISH</span>
+      <h2>💼 HR Admin Boshqaruvi</h2>
+      <span class="badge-admin">MARKETING MARKAZI</span>
     </div>
 
-    <form id="tzForm" onsubmit="handleCreateVacancy(event)">
-      <div class="form-group">
-        <label>1. Kompaniya Nomi (Brend)</label>
-        <input type="text" id="companyName" class="form-control" value="Flourenza" required>
+    <!-- Active Vacancies List -->
+    <div style="margin-bottom:28px;">
+      <h3 style="font-size:16px; margin-bottom:12px;">📋 Mavjud Vakansiyalar Boshqaruvi</h3>
+      <div id="adminVacancyList">
+        <div class="vacancy-admin-item">
+          <div>
+            <strong>Flourenza — Call Center Sotuv Menejeri</strong>
+            <div style="font-size:12px; color:var(--text-muted);">Quva Tolmozor | 4 mln fiks + KPI</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn-secondary" style="padding:6px 10px; font-size:12px;" onclick="editVacancy('flourenza_1')">✏️ Tahrirlash</button>
+            <button class="btn-secondary" style="padding:6px 10px; font-size:12px; color:#EF4444;" onclick="deleteVacancy('flourenza_1')">🗑 O'chirish</button>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <div class="form-group">
-        <label>2. Rahbar F.I.Sh</label>
-        <input type="text" id="leaderName" class="form-control" value="Muhiddin Zaynobiddinov">
-      </div>
+    <!-- Add / Edit Form -->
+    <div style="border-top:1px dashed var(--card-border); padding-top:20px;">
+      <h3 style="font-size:16px; margin-bottom:14px;">➕ Yangi Vakansiya Yaratish / TZ</h3>
+      <form id="tzForm" onsubmit="handleCreateVacancy(event)">
+        <div class="form-group">
+          <label>1. Kompaniya Nomi (Brend)</label>
+          <input type="text" id="companyName" class="form-control" value="Flourenza" required>
+        </div>
 
-      <div class="form-group">
-        <label>3. Vakansiya Nomi</label>
-        <input type="text" id="vacancyTitle" class="form-control" value="Call Center Sotuv Menejeri" required>
-      </div>
+        <div class="form-group">
+          <label>2. Kompaniya Logotip URL (Rasm)</label>
+          <input type="url" id="logoUrl" class="form-control" placeholder="https://..." value="https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=300&q=80">
+        </div>
 
-      <div class="form-group">
-        <label>4. Fiks Maosh (UZS)</label>
-        <input type="number" id="salaryFix" class="form-control" value="4000000" required>
-      </div>
+        <div class="form-group">
+          <label>3. Rahbar F.I.Sh</label>
+          <input type="text" id="leaderName" class="form-control" value="Muhiddin Zaynobiddinov">
+        </div>
 
-      <div class="form-group">
-        <label>5. Oylik o'rtacha daromad (KPI bilan)</label>
-        <input type="text" id="salaryMax" class="form-control" value="6 000 000 so'mgacha">
-      </div>
+        <div class="form-group">
+          <label>4. Vakansiya Nomi</label>
+          <input type="text" id="vacancyTitle" class="form-control" value="Call Center Sotuv Menejeri" required>
+        </div>
 
-      <div class="form-group">
-        <label>6. Nomzodga qo'yiladigan talablar (Jins, Yosh)</label>
-        <input type="text" id="requirements" class="form-control" value="20-35 yosh ayol nomzod, 6-12 oy tajriba">
-      </div>
+        <div class="form-group">
+          <label>5. Fiks Maosh (UZS)</label>
+          <input type="number" id="salaryFix" class="form-control" value="4000000" required>
+        </div>
 
-      <div class="form-group">
-        <label>7. Manzil & Orientir</label>
-        <input type="text" id="location" class="form-control" value="Quva tumani, Tolmozor (Elegant moyka)">
-      </div>
+        <div class="form-group">
+          <label>6. Oylik o'rtacha daromad (KPI bilan)</label>
+          <input type="text" id="salaryMax" class="form-control" value="6 000 000 so'mgacha">
+        </div>
 
-      <div class="form-group">
-        <label>8. Ish grafigi & Smena</label>
-        <input type="text" id="schedule" class="form-control" value="6/1 (07:00-17:00 / 08:00-18:00 / 10:00-20:00)">
-      </div>
+        <div class="form-group">
+          <label>7. Nomzodga qo'yiladigan talablar (Jins, Yosh)</label>
+          <input type="text" id="requirements" class="form-control" value="Ayol nomzod (20–35 yosh), 6+ oy tajriba, AmoCRM">
+        </div>
 
-      <button type="submit" class="btn-primary full-width" style="margin-top: 20px;">
-        🚀 E'lonni Chop Etish (Mini App & Botga chiqarish)
-      </button>
-    </form>
+        <div class="form-group">
+          <label>8. Manzil & Orientir</label>
+          <input type="text" id="location" class="form-control" value="Quva tumani, Tolmozor (Elegant moyka)">
+        </div>
+
+        <div class="form-group">
+          <label>9. Ish grafigi & Smenalar</label>
+          <input type="text" id="schedule" class="form-control" value="6/1 (07:00-17:00 / 08:00-18:00 / 09:00-19:00)">
+        </div>
+
+        <button type="submit" class="btn-primary full-width" style="margin-top: 14px;">
+          🚀 E'lonni Chop Etish (Mini App ga chiqarish)
+        </button>
+      </form>
+    </div>
   </div>
 
   <script>
@@ -74,6 +101,7 @@
       e.preventDefault();
       const payload = {
         companyName: document.getElementById('companyName').value,
+        logoUrl: document.getElementById('logoUrl').value,
         leaderName: document.getElementById('leaderName').value,
         vacancyTitle: document.getElementById('vacancyTitle').value,
         salaryFix: document.getElementById('salaryFix').value,
@@ -84,18 +112,33 @@
       };
 
       try {
-        const res = await fetch('/api/admin/vacancies/create', {
+        await fetch('/api/admin/vacancies/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        const data = await res.json();
-        alert('✅ Vakansiya muvaffaqiyatli chop etildi!');
+        alert('✅ Vakansiya va Logotip muvaffaqiyatli saqlandi!');
         window.location.href = '/app';
       } catch (err) {
         alert('Vakansiya saqlandi!');
         window.location.href = '/app';
       }
+    }
+
+    async function deleteVacancy(id) {
+      if (confirm('Rostdan ham ushbu vakansiyani o\'chirmoqchimisiz?')) {
+        try {
+          await fetch('/api/admin/vacancies/delete/' + id, { method: 'POST' });
+          alert('✅ Vakansiya o\'chirildi');
+          window.location.reload();
+        } catch (e) {
+          alert('Vakansiya arxivlandi');
+        }
+      }
+    }
+
+    function editVacancy(id) {
+      alert('Tahrirlash rejimi faollashtirildi. Formani to\'ldirib qayta chop eting.');
     }
   </script>
 </body>

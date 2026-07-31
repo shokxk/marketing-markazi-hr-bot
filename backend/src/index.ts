@@ -42,14 +42,67 @@ app.get('/api/webapp/vacancies', async (req, res) => {
       id: v.id,
       title: v.title,
       company: v.company.name,
-      city: v.city || v.company.city || 'Toshkent',
-      salary: v.salaryFrom && v.salaryTo ? `${v.salaryFrom.toLocaleString()} - ${v.salaryTo.toLocaleString()} UZS` : 'Kelishiladi',
+      logoUrl: v.company.logoUrl || 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=300&q=80',
+      description: v.description,
+      requirements: v.requirements,
+      workSchedule: v.workSchedule || '6/1 (07:00-17:00 / 08:00-18:00)',
+      address: v.address || v.company.address || 'Quva shahri, Tolmozor',
+      city: v.city || v.company.city || 'Quva shahri',
+      salary: v.salaryFrom && v.salaryTo ? `${v.salaryFrom.toLocaleString()} - ${v.salaryTo.toLocaleString()} UZS` : '4 000 000 - 6 000 000 UZS',
       tag: v.videoRequired ? 'VIDEO ARIZA' : 'OCHIQ'
     }));
     await prisma.$disconnect();
     res.json({ vacancies: formatted });
   } catch (err: any) {
     res.json({ vacancies: [] });
+  }
+});
+
+// Admin Vacancy Create / Edit / Delete
+app.post('/api/admin/vacancies/create', async (req, res) => {
+  try {
+    const { companyName, vacancyTitle, salaryFix, salaryMax, requirements, location, schedule, logoUrl } = req.body;
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    let comp = await prisma.company.findFirst({ where: { name: companyName } });
+    if (!comp) {
+      comp = await prisma.company.create({
+        data: { name: companyName, logoUrl: logoUrl || null, city: location, isActive: true }
+      });
+    }
+
+    const vacancy = await prisma.vacancy.create({
+      data: {
+        companyId: comp.id,
+        title: vacancyTitle,
+        description: `FLOURENZA JAMOASIGA ${vacancyTitle.toUpperCase()} ISHGA TAKLIF ETADI!\n\nNomzodga qo'yiladigan talablar:\n${requirements}\n\nFiks Maosh: ${salaryFix} UZS + KPI (${salaryMax})\nManzil: ${location}\nGrafik: ${schedule}`,
+        requirements,
+        salaryFrom: parseInt(salaryFix) || 4000000,
+        salaryTo: parseInt(salaryFix) + 2000000,
+        city: location,
+        workSchedule: schedule,
+        isActive: true
+      }
+    });
+
+    await prisma.$disconnect();
+    res.json({ status: 'ok', vacancy });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/vacancies/delete/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    await prisma.vacancy.update({ where: { id }, data: { isActive: false } });
+    await prisma.$disconnect();
+    res.json({ status: 'ok', message: 'Vakansiya o\'chirildi' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -123,7 +176,7 @@ async function autoSeed() {
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
     
-    // Always clear old generic demo vacancies and replace with Flourenza
+    // Clear old demo companies
     await prisma.company.deleteMany({ where: { name: { not: 'Flourenza' } } });
     
     let flourenza = await prisma.company.findFirst({ where: { name: 'Flourenza' } });
@@ -132,6 +185,7 @@ async function autoSeed() {
         data: {
           name: 'Flourenza',
           description: 'Un, yem, yog\', shakar, margarin, salqin ichimliklar ulgurji bazasi',
+          logoUrl: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=300&q=80',
           city: 'Quva shahri, Tolmozor',
           address: 'Farg\'ona-Asaka yo\'li, Orientir: Elegant moyka',
           isActive: true
@@ -146,18 +200,18 @@ async function autoSeed() {
         data: {
           companyId: flourenza.id,
           title: 'Call Center Sotuv Menejeri',
-          description: `FLOURENZA JAMOASIGA CALL CENTER SOTUV MENEJERI ISHGA TAKLIF ETADI!\n\n👩💼 Nomzodga qo'yiladigan talablar:\n• Ayol nomzod (20–35 yosh)\n• Sotuv yoki Call Center yo'nalishida kamida 6 oylik ish tajribasi\n• O'zbek tilida ravon muloqot qila olishi\n• AmoCRM va kompyuter savodxonligi\n\n🎁 Biz sizga taklif qilamiz:\n💰 Fiks maosh: 4 000 000 so'm + KPI bonuslar (6 mln so'mgacha)\n🍽 Korxona hisobidan tushlik\n📍 Manzil: Quva tumani, Tolmozor (Elegant moyka)\n⏰ Grafik: 6/1 (07:00-17:00 / 08:00-18:00 / 10:00-20:00)`,
-          requirements: '20-35 yosh ayol nomzod, 6-12 oy tajriba, amoCRM, O\'zbek tili',
+          description: `FLOURENZA JAMOASIGA CALL CENTER SOTUV MENEJERI ISHGA TAKLIF ETADI!\n\nFlourenza — sifatli mahsulot va mijozlar ishonchini qadrlaydigan kompaniya. Jamoamizni kengaytirish maqsadida Call Center Sotuv Menejeri lavozimiga mas'uliyatli va natijaga yo'naltirilgan nomzodlarni taklif qilamiz.\n\n👩💼 Nomzodga qo'yiladigan talablar:\n✅ Ayol nomzod (20–35 yosh)\n✅ Sotuv yoki Call Center yo'nalishida kamida 6 oylik ish tajribasi\n✅ O'zbek tilida ravon muloqot qila olishi\n✅ Mijozlar bilan telefon orqali ishlash va muzokara olib borish ko'nikmasi\n✅ Kompyuter savodxonligi (AmoCRM tizimlari bilan ishlash tajribasi ustunlik beradi)\n✅ Mas'uliyatli, intizomli va natijaga yo'naltirilgan\n\n📌 Asosiy vazifalar:\n• Mijozlarga telefon orqali konsultatsiya berish\n• Kiruvchi va chiquvchi qo'ng'iroqlar bilan ishlash\n• Mijoz ehtiyojini aniqlash va mahsulotlarni tavsiya qilish\n• Sotuvni muvaffaqiyatli yakunlash\n• AmoCRM tizimida ma'lumotlarni yuritish\n\n🎁 Biz sizga taklif qilamiz:\n💰 Barqaror oylik maosh (4 000 000 UZS fiks)\n📈 KPI asosida bonus va rag'batlantirish (6 000 000 UZS gacha)\n🍽 Korxona hisobidan tushlik\n📚 Kompaniya hisobidan o'qitish\n🤝 Ahil va professional jamoa\n📈 Kasbiy va martaba o'sishi uchun imkoniyat\n\n📍 Ish sharoitlari:\n🕘 Ish vaqti: 07:00–17:00 / 08:00–18:00 / 09:00–19:00\n📅 Ish grafigi: 6/1\n📍 Manzil: Quva Tumani, Tolmozor chorraha (Elegant moyka)`,
+          requirements: 'Ayol nomzod (20-35 yosh), 6+ oy tajriba, O\'zbek tili, AmoCRM',
           salaryFrom: 4000000,
           salaryTo: 6000000,
           city: 'Quva shahri',
           address: 'Tolmozor chorraha (Elegant moyka)',
-          workSchedule: '6/1 (07:00 - 17:00 / 08:00 - 18:00)',
+          workSchedule: '6/1 (07:00-17:00 / 08:00-18:00 / 09:00-19:00)',
           videoRequired: true,
           isActive: true
         }
       });
-      console.log('✅ Flourenza Call Center Sotuv Menejeri vacancy created!');
+      console.log('✅ Rich Flourenza Call Center Sotuv Menejeri vacancy created!');
     }
 
     await prisma.$disconnect();
