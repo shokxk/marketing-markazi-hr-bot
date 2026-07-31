@@ -155,7 +155,18 @@ function renderCurrentQuestion() {
         const code = btn.getAttribute('data-code');
         const idx = parseInt(btn.getAttribute('data-idx'));
         candidateAnswers[code] = q.options[idx];
-        renderCurrentQuestion();
+        
+        if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        
+        // Auto-advance to next question instantly!
+        setTimeout(() => {
+          if (currentStepIndex < standardQuestions.length - 1) {
+            currentStepIndex++;
+            renderCurrentQuestion();
+          } else {
+            submitApplication();
+          }
+        }, 150);
       });
     });
   } else {
@@ -175,11 +186,6 @@ function renderCurrentQuestion() {
   document.getElementById('btnNext').textContent = currentStepIndex === standardQuestions.length - 1 ? 'Topshirish 🚀' : 'Keyingisi →';
 }
 
-function selectChoice(code, val) {
-  candidateAnswers[code] = val;
-  renderCurrentQuestion();
-}
-
 function updateAnswer(code, val) {
   candidateAnswers[code] = val;
 }
@@ -192,13 +198,6 @@ function prevQuestion() {
 }
 
 async function nextQuestion() {
-  const q = standardQuestions[currentStepIndex];
-  if (!candidateAnswers[q.code] && q.type !== 'TEXT') {
-    if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-    alert('Iltimos, javobni kiriting');
-    return;
-  }
-
   if (currentStepIndex < standardQuestions.length - 1) {
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     currentStepIndex++;
