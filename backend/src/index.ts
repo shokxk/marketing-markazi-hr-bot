@@ -411,17 +411,26 @@ app.post('/api/webapp/submit', async (req, res) => {
         `⭐ <b>Avto-reyting:</b> 92/100 (Barcha shartlar bajarildi)\n` +
         `🔗 <b>amoCRM:</b> <a href="https://${config.amocrm.subdomain}">Yangi Bitim yaratildi</a>`;
 
-      if (answers.face_id_url) {
+      // 1. Resolve candidate photo path
+      let faceLocalPath: string | undefined = undefined;
+      const photoCandidate = answers.face_id_url || answers.avatarUrl || answers.photo_url;
+      if (photoCandidate && typeof photoCandidate === 'string') {
+        const relPath = photoCandidate.replace(/^\/+/, '');
+        const p1 = path.resolve(process.cwd(), relPath);
+        const p2 = path.resolve(process.cwd(), 'backend', relPath);
+        if (fs.existsSync(p1)) faceLocalPath = p1;
+        else if (fs.existsSync(p2)) faceLocalPath = p2;
+      }
+
+      console.log('📸 Photo path lookup:', photoCandidate, 'Resolved path:', faceLocalPath);
+
+      if (faceLocalPath && fs.existsSync(faceLocalPath)) {
         try {
           const { InputFile } = await import('grammy');
-          const relPath = answers.face_id_url.replace(/^\/+/, '');
-          const localPath = path.resolve(process.cwd(), relPath);
-          if (fs.existsSync(localPath)) {
-            await bot.api.sendPhoto(config.hrTelegramGroupId, new InputFile(localPath), { caption: hrGroupMsg, parse_mode: 'HTML' });
-          } else {
-            await bot.api.sendMessage(config.hrTelegramGroupId, hrGroupMsg, { parse_mode: 'HTML' });
-          }
-        } catch {
+          await bot.api.sendPhoto(config.hrTelegramGroupId, new InputFile(faceLocalPath), { caption: hrGroupMsg, parse_mode: 'HTML' });
+          console.log('✅ Sent Face ID photo to Telegram HR Group');
+        } catch (photoErr: any) {
+          console.error('Photo send error:', photoErr.message);
           await bot.api.sendMessage(config.hrTelegramGroupId, hrGroupMsg, { parse_mode: 'HTML' });
         }
       } else {
@@ -432,11 +441,6 @@ app.post('/api/webapp/submit', async (req, res) => {
       try {
         const { generateCandidatePdfResume } = await import('./services/pdf-resume.service');
         const { InputFile } = await import('grammy');
-        let faceLocalPath: string | undefined = undefined;
-        if (answers.face_id_url) {
-          const relPath = answers.face_id_url.replace(/^\/+/, '');
-          faceLocalPath = path.resolve(process.cwd(), relPath);
-        }
 
         const pdfPath = await generateCandidatePdfResume({
           candidateName,
