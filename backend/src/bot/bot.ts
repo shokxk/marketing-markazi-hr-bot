@@ -1,4 +1,4 @@
-import { Bot, session } from 'grammy';
+import { Bot, session, GrammyError, HttpError } from 'grammy';
 import { BotContext, SessionData } from './types';
 import { config } from '../config';
 import { handleStartCommand, handleStartAnketa, handleConsentCallback } from './handlers/start.handler';
@@ -28,6 +28,20 @@ import { handleStatusCheckCommand, handleHelpCommand } from './handlers/status.h
 
 export function createBotInstance() {
   const bot = new Bot<BotContext>(config.botToken);
+
+  // Global Error Handler (Prevents bot crashes)
+  bot.catch((err) => {
+    const ctx = err.ctx;
+    console.error(`⚠️ Error handling update ${ctx.update.update_id}:`);
+    const e = err.error;
+    if (e instanceof GrammyError) {
+      console.error("Grammy error:", e.description);
+    } else if (e instanceof HttpError) {
+      console.error("Network error:", e);
+    } else {
+      console.error("Unknown bot error:", e);
+    }
+  });
 
   // Configure session middleware
   bot.use(

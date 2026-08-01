@@ -254,24 +254,49 @@ async function autoSeed() {
   }
 }
 
-// Start Express Server
+// Auto-reconnecting Telegram Bot launcher
+async function startBotWithRetry() {
+  if (process.env.NODE_ENV === 'test' || !config.botToken || config.botToken === 'MOCK_BOT_TOKEN_123456') {
+    console.log('ℹ️ Running with mock/dummy Telegram bot token.');
+    return;
+  }
+
+  while (true) {
+    try {
+      console.log('🤖 Initializing Telegram Bot engine...');
+      const bot = createBotInstance();
+
+      // Automatically configure Telegram Chat Menu Button to open Mini App
+      const webAppUrl = process.env.RENDER_EXTERNAL_URL ? `${process.env.RENDER_EXTERNAL_URL}/app` : 'https://marketing-markazi-hr-bot.onrender.com/app';
+      try {
+        await bot.api.setChatMenuButton({
+          menu_button: {
+            type: 'web_app',
+            text: '📱 Mini App',
+            web_app: { url: webAppUrl }
+          }
+        });
+        console.log(`📱 Telegram Chat Menu Button set to ${webAppUrl}`);
+      } catch (menuErr: any) {
+        console.log('📱 Menu button setup info:', menuErr.message);
+      }
+
+      await bot.start({
+        onStart: (info) => {
+          console.log(`🤖 Telegram Bot @${info.username} started successfully & active 24/7!`);
+        },
+      });
+      break;
+    } catch (err: any) {
+      console.error('⚠️ Telegram Bot start error (retrying in 10s):', err.message);
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+    }
+  }
+}
+
+// Start Express Server & Launch Bot
 app.listen(config.port, async () => {
   console.log(`🚀 Marketing Markazi HR Backend API running on port ${config.port}`);
-  await autoSeed();
+  autoSeed().catch(e => console.error('Auto-seed error:', e.message));
+  startBotWithRetry().catch(e => console.error('Bot launch loop error:', e.message));
 });
-
-// Launch Telegram Bot
-if (process.env.NODE_ENV !== 'test' && config.botToken !== 'MOCK_BOT_TOKEN_123456') {
-  try {
-    const bot = createBotInstance();
-    bot.start({
-      onStart: (info) => {
-        console.log(`🤖 Telegram Bot @${info.username} started successfully!`);
-      },
-    });
-  } catch (err: any) {
-    console.error('❌ Failed to start Telegram Bot:', err.message);
-  }
-} else {
-  console.log('ℹ️ Running with mock/dummy Telegram bot token.');
-}
