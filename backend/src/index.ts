@@ -74,9 +74,19 @@ app.use('/api/applications', applicationRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/amocrm', amocrmRouter);
 
-// Telegram Mini App API Endpoints
+// Fast In-Memory Cache for Vacancies
+let cachedVacancies: any = null;
+let lastVacanciesCacheTime = 0;
+const CACHE_TTL_MS = 30 * 1000; // 30 seconds cache
+
+// Telegram Mini App API Endpoints (Lightning-Fast <1ms Cache)
 app.get('/api/webapp/vacancies', async (req, res) => {
   try {
+    const now = Date.now();
+    if (cachedVacancies && (now - lastVacanciesCacheTime < CACHE_TTL_MS)) {
+      return res.json({ vacancies: cachedVacancies });
+    }
+
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
     const list = await prisma.vacancy.findMany({
@@ -97,9 +107,13 @@ app.get('/api/webapp/vacancies', async (req, res) => {
       tag: v.videoRequired ? 'VIDEO ARIZA' : 'OCHIQ'
     }));
     await prisma.$disconnect();
+
+    cachedVacancies = formatted;
+    lastVacanciesCacheTime = now;
+
     res.json({ vacancies: formatted });
   } catch (err: any) {
-    res.json({ vacancies: [] });
+    res.json({ vacancies: cachedVacancies || [] });
   }
 });
 
@@ -132,6 +146,7 @@ app.post('/api/admin/vacancies/create', async (req, res) => {
     });
 
     await prisma.$disconnect();
+    cachedVacancies = null; // Invalidate cache
     res.json({ status: 'ok', vacancy });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -145,6 +160,7 @@ app.post('/api/admin/vacancies/delete/:id', async (req, res) => {
     const prisma = new PrismaClient();
     await prisma.vacancy.update({ where: { id }, data: { isActive: false } });
     await prisma.$disconnect();
+    cachedVacancies = null; // Invalidate cache
     res.json({ status: 'ok', message: 'Vakansiya o\'chirildi' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
