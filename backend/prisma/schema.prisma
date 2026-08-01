@@ -26,6 +26,10 @@ model User {
   telegramUsername String?
   fullName         String?
   phone            String?
+  city             String?
+  avatarUrl        String?
+  bio              String?
+  skills           String?
   language         String        @default("uz")
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt

@@ -3,284 +3,865 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Admin Dashboard — Vacancy & Logo Manager</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <title>Admin Panel — Marketing Markazi HR</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
   <style>
     :root {
       --primary: #FF5A36;
       --primary-hover: #E04826;
-      --bg-gradient: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-      --card-bg: rgba(30, 41, 59, 0.85);
-      --card-border: rgba(255, 255, 255, 0.1);
-      --text-dark: #F8FAFC;
-      --text-muted: #94A3B8;
-      --radius-lg: 20px;
-      --radius-md: 12px;
-      --radius-pill: 999px;
+      --primary-glow: rgba(255,90,54,0.25);
+      --bg: #0B1120;
+      --bg2: #111827;
+      --card: rgba(255,255,255,0.05);
+      --card-border: rgba(255,255,255,0.08);
+      --text: #F1F5F9;
+      --muted: #64748B;
+      --success: #22C55E;
+      --danger: #EF4444;
+      --warning: #F59E0B;
+      --sidebar-w: 220px;
+      --r-lg: 16px;
+      --r-md: 10px;
     }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:'Plus Jakarta Sans',sans-serif; }
+    html,body { height:100%; background:var(--bg); color:var(--text); overflow-x:hidden; }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    /* ── LAYOUT ── */
+    .layout { display:flex; height:100vh; }
 
-    body {
-      background: var(--bg-gradient);
-      color: var(--text-dark);
-      min-height: 100vh;
-      padding: 20px 16px 60px 16px;
-    }
-
-    .admin-container {
-      max-width: 520px;
-      margin: 0 auto;
-    }
-
-    .header-box {
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--bg2);
+      border-right: 1px solid var(--card-border);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 16px;
+      flex-direction: column;
+      padding: 24px 0;
+      flex-shrink: 0;
+    }
+    .sidebar-logo {
+      padding: 0 20px 24px;
       border-bottom: 1px solid var(--card-border);
+      margin-bottom: 16px;
     }
+    .sidebar-logo h1 { font-size:15px; font-weight:800; color:#fff; }
+    .sidebar-logo span { font-size:11px; color:var(--primary); font-weight:600; }
 
-    .badge-admin {
-      background: linear-gradient(135deg, #FF5A36, #FF8E53);
-      color: #fff;
-      padding: 6px 14px;
-      border-radius: var(--radius-pill);
-      font-size: 12px;
-      font-weight: 800;
-      box-shadow: 0 4px 12px rgba(255, 90, 54, 0.3);
-    }
-
-    .vacancy-admin-item {
-      padding: 16px;
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--card-border);
-      margin-bottom: 14px;
+    .nav-item {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      border-radius: 0;
+      transition: all 0.2s ease;
+      border-left: 3px solid transparent;
+      margin: 2px 0;
+      user-select: none;
     }
-
-    .form-box {
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      padding: 20px;
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--card-border);
+    .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .nav-item.active {
+      color: var(--primary);
+      background: var(--primary-glow);
+      border-left-color: var(--primary);
     }
-
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-weight: 700; font-size: 13px; margin-bottom: 6px; color: #CBD5E1; }
-
-    .form-control {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid var(--card-border) !important;
-      border-radius: var(--radius-md) !important;
-      font-size: 14px !important;
-      font-weight: 700 !important;
-      background: #1E293B !important;
-      color: #FFFFFF !important;
-      outline: none !important;
-    }
-
-    .form-control::placeholder { color: #94A3B8 !important; }
-
-    .form-control:focus {
-      border-color: var(--primary) !important;
-      background: #0F172A !important;
-      color: #FFFFFF !important;
-    }
-
-    .btn-primary {
-      width: 100%;
-      padding: 14px;
+    .nav-item .icon { font-size:18px; flex-shrink:0; }
+    .nav-badge {
+      margin-left:auto;
       background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-md);
-      font-weight: 800;
-      font-size: 15px;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(255, 90, 54, 0.4);
+      color:#fff;
+      font-size:10px;
+      font-weight:800;
+      padding: 2px 7px;
+      border-radius: 99px;
     }
 
-    .btn-secondary {
-      padding: 8px 12px;
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px 20px;
+      border-top: 1px solid var(--card-border);
       font-size: 12px;
-      font-weight: 700;
+      color: var(--muted);
+    }
+
+    /* ── MAIN ── */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 24px;
+    }
+
+    .page { display:none; animation: fadeIn 0.25s ease; }
+    .page.active { display:block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    .page-header {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom: 24px;
+    }
+    .page-title { font-size:22px; font-weight:800; }
+    .page-sub { font-size:13px; color:var(--muted); margin-top:4px; }
+
+    /* ── STATS CARDS ── */
+    .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:28px; }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--r-lg);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::after {
+      content:'';
+      position:absolute; top:0; left:0; right:0; height:3px;
+      background: var(--accent, var(--primary));
+    }
+    .stat-num { font-size:28px; font-weight:800; margin-bottom:4px; }
+    .stat-label { font-size:12px; color:var(--muted); font-weight:600; }
+    .stat-icon { position:absolute; right:16px; top:16px; font-size:28px; opacity:0.2; }
+
+    /* ── TABLE / CARDS ── */
+    .section-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .section-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--card-border);
+      font-weight:700; font-size:14px;
+      display:flex; align-items:center; gap:10px;
+    }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--card-border);
+      flex-wrap: wrap;
+    }
+    .filter-select {
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--r-md);
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
       cursor: pointer;
+      outline:none;
+    }
+    .filter-select:focus { border-color: var(--primary); }
+    .filter-input {
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--r-md);
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      outline:none;
+      flex:1; min-width:140px;
+    }
+    .filter-input:focus { border-color: var(--primary); }
+    .filter-input::placeholder { color:var(--muted); }
+
+    /* ── CANDIDATE CARD ── */
+    .cand-list { padding: 12px 20px; }
+    .cand-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--card-border);
+      transition: background 0.15s;
+    }
+    .cand-card:last-child { border-bottom:none; }
+    .cand-avatar {
+      width: 46px; height: 46px; border-radius: 50%;
+      object-fit: cover;
+      background: linear-gradient(135deg, var(--primary), #FF8E53);
+      display: flex; align-items:center; justify-content:center;
+      font-size:18px; font-weight:800; color:#fff;
+      flex-shrink:0;
+    }
+    .cand-avatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
+    .cand-info { flex:1; min-width:0; }
+    .cand-name { font-size:14px; font-weight:700; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cand-meta { font-size:12px; color:var(--muted); display:flex; gap:12px; flex-wrap:wrap; }
+    .cand-actions { display:flex; gap:8px; flex-shrink:0; }
+
+    /* ── BADGES ── */
+    .badge {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:3px 10px; border-radius:99px;
+      font-size:11px; font-weight:700;
+    }
+    .badge-new { background:rgba(34,197,94,0.15); color:var(--success); }
+    .badge-invited { background:rgba(59,130,246,0.15); color:#60A5FA; }
+    .badge-rejected { background:rgba(239,68,68,0.15); color:var(--danger); }
+    .badge-pending { background:rgba(245,158,11,0.15); color:var(--warning); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display:inline-flex; align-items:center; gap:6px;
+      padding: 8px 14px;
+      border: none; border-radius: var(--r-md);
+      font-size: 13px; font-weight:700; cursor:pointer;
+      transition: all 0.2s ease; font-family:inherit;
+    }
+    .btn-primary { background:var(--primary); color:#fff; box-shadow:0 4px 12px var(--primary-glow); }
+    .btn-primary:hover { background:var(--primary-hover); transform:translateY(-1px); }
+    .btn-success { background:rgba(34,197,94,0.15); color:var(--success); border:1px solid rgba(34,197,94,0.3); }
+    .btn-success:hover { background:rgba(34,197,94,0.25); }
+    .btn-danger { background:rgba(239,68,68,0.15); color:var(--danger); border:1px solid rgba(239,68,68,0.3); }
+    .btn-danger:hover { background:rgba(239,68,68,0.25); }
+    .btn-ghost { background:rgba(255,255,255,0.06); color:var(--text); }
+    .btn-ghost:hover { background:rgba(255,255,255,0.1); }
+    .btn-sm { padding: 6px 10px; font-size:12px; }
+    .btn-full { width:100%; justify-content:center; }
+
+    /* ── FORM ── */
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:20px; }
+    .form-group { display:flex; flex-direction:column; gap:6px; }
+    .form-group.full { grid-column:1/-1; }
+    .form-label { font-size:12px; font-weight:700; color:#94A3B8; text-transform:uppercase; letter-spacing:0.5px; }
+    .form-input {
+      background:var(--bg);
+      border:1px solid var(--card-border);
+      border-radius:var(--r-md);
+      color:var(--text);
+      padding:10px 14px;
+      font-size:14px; font-family:inherit;
+      outline:none;
+      transition:border-color 0.2s;
+    }
+    .form-input:focus { border-color:var(--primary); }
+    .form-input::placeholder { color:var(--muted); }
+
+    /* ── UPLOAD AREA ── */
+    .upload-area {
+      border: 2px dashed var(--card-border);
+      border-radius: var(--r-lg);
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .upload-area:hover { border-color: var(--primary); background: var(--primary-glow); }
+    .upload-area input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .upload-icon { font-size:32px; margin-bottom:10px; }
+    .upload-text { font-size:13px; color:var(--muted); }
+    .upload-preview {
+      width:80px; height:80px; border-radius:12px;
+      object-fit:cover; margin:0 auto 10px;
+      border:2px solid var(--primary);
+      display:none;
+    }
+
+    /* ── VACANCY ITEM ── */
+    .vacancy-item {
+      display:flex; align-items:center; gap:14px;
+      padding:14px 20px;
+      border-bottom:1px solid var(--card-border);
+      transition:background 0.15s;
+    }
+    .vacancy-item:last-child { border-bottom:none; }
+    .vacancy-logo {
+      width:42px; height:42px; border-radius:10px;
+      object-fit:cover; flex-shrink:0;
+      background:var(--bg); border:1px solid var(--card-border);
+    }
+    .vacancy-info { flex:1; }
+    .vacancy-title { font-size:14px; font-weight:700; }
+    .vacancy-company { font-size:12px; color:var(--muted); margin-top:2px; }
+
+    /* ── TOAST ── */
+    .toast {
+      position:fixed; bottom:24px; right:24px;
+      background:#1E293B; border:1px solid var(--card-border);
+      border-radius:var(--r-md); padding:14px 18px;
+      font-size:13px; font-weight:600;
+      transform:translateY(80px); opacity:0;
+      transition:all 0.3s ease;
+      z-index:9999;
+      display:flex; align-items:center; gap:10px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.4);
+    }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .toast.success { border-left:3px solid var(--success); }
+    .toast.error { border-left:3px solid var(--danger); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position:fixed; inset:0;
+      background:rgba(0,0,0,0.7); backdrop-filter:blur(4px);
+      z-index:1000; display:none; align-items:center; justify-content:center;
+    }
+    .modal-overlay.open { display:flex; animation:fadeIn 0.2s ease; }
+    .modal {
+      background:var(--bg2); border:1px solid var(--card-border);
+      border-radius:var(--r-lg); width:90%; max-width:480px;
+      max-height:90vh; overflow-y:auto;
+    }
+    .modal-header {
+      padding:20px 24px; border-bottom:1px solid var(--card-border);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .modal-title { font-size:16px; font-weight:800; }
+    .modal-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+
+    /* ── EMPTY STATE ── */
+    .empty-state { text-align:center; padding:48px 24px; color:var(--muted); }
+    .empty-state .icon { font-size:48px; margin-bottom:12px; }
+    .empty-state p { font-size:14px; }
+
+    /* ── LOADING ── */
+    .spinner {
+      width:20px; height:20px; border:2px solid var(--card-border);
+      border-top-color:var(--primary); border-radius:50%;
+      animation:spin 0.7s linear infinite;
+    }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:600px){
+      .sidebar { display:none; }
+      .stats-row { grid-template-columns:1fr 1fr; }
+      .form-grid { grid-template-columns:1fr; }
+      .main { padding:16px; }
     }
   </style>
 </head>
 <body>
-  <div class="admin-container">
-    <div class="header-box">
-      <div>
-        <h2 style="font-size:20px; font-weight:800;">💼 HR Admin Panel</h2>
-        <span style="font-size:12px; color:var(--primary); font-weight:700;">Marketing Markazi</span>
-      </div>
-      <span class="badge-admin">ADMIN ACCESS</span>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>💼 HR Admin</h1>
+      <span>Marketing Markazi</span>
     </div>
 
-    <!-- Active Vacancies List -->
-    <div style="margin-bottom:28px;">
-      <h3 style="font-size:16px; margin-bottom:14px; font-weight:800;">📋 Mavjud Vakansiyalar</h3>
-      <div id="adminVacancyList">
-        <div class="vacancy-admin-item">
-          <div>
-            <strong style="font-size:15px; color:#fff;">Flourenza — Call Center Sotuv Menejeri</strong>
-            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">📍 Quva Tolmozor | 💰 4 000 000 UZS fiks + KPI</div>
-          </div>
-          <div style="display:flex; gap:6px;">
-            <button class="btn-secondary" onclick="editVacancy('flourenza_1')">✏️ Tahrirlash</button>
-            <button class="btn-secondary" style="color:#F87171;" onclick="deleteVacancy('flourenza_1')">🗑 O'chirish</button>
-          </div>
-        </div>
+    <nav>
+      <div class="nav-item active" onclick="showPage('vacancies', this)" id="nav-vacancies">
+        <span class="icon">📋</span> Vakansiyalar
+        <span class="nav-badge" id="vacBadge">0</span>
       </div>
+      <div class="nav-item" onclick="showPage('candidates', this)" id="nav-candidates">
+        <span class="icon">👥</span> Soiskatellar
+        <span class="nav-badge" id="candBadge">0</span>
+      </div>
+      <div class="nav-item" onclick="showPage('stats', this)" id="nav-stats">
+        <span class="icon">📊</span> Statistika
+      </div>
+      <div class="nav-item" onclick="showPage('add-vacancy', this)" id="nav-add">
+        <span class="icon">➕</span> Vakansiya qo'sh
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      🟢 Server faol<br>
+      <span id="serverTime" style="font-size:11px;"></span>
     </div>
+  </aside>
 
-    <!-- Add / Edit Form -->
-    <div class="form-box">
-      <h3 style="font-size:16px; margin-bottom:16px; font-weight:800; color:var(--primary);">➕ Yangi Vakansiya & TZ Yaratish</h3>
-      <form id="tzForm" onsubmit="handleCreateVacancy(event)">
-        <div class="form-group">
-          <label>1. Kompaniya Nomi (Brend)</label>
-          <input type="text" id="companyName" class="form-control" value="Flourenza" required>
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ════ PAGE: VACANCIES ════ -->
+    <div class="page active" id="page-vacancies">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📋 Vakansiyalar</div>
+          <div class="page-sub">Barcha faol e'lonlar ro'yxati</div>
         </div>
-
-        <div class="form-group">
-          <label>2. Kompaniya Logotip URL (Rasm)</label>
-          <input type="url" id="logoUrl" class="form-control" placeholder="https://..." value="https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=300&q=80">
-        </div>
-
-        <div class="form-group">
-          <label>3. Rahbar F.I.Sh</label>
-          <input type="text" id="leaderName" class="form-control" value="Muhiddin Zaynobiddinov">
-        </div>
-
-        <div class="form-group">
-          <label>4. Vakansiya Nomi</label>
-          <input type="text" id="vacancyTitle" class="form-control" value="Call Center Sotuv Menejeri" required>
-        </div>
-
-        <div class="form-group">
-          <label>5. Fiks Maosh (UZS)</label>
-          <input type="number" id="salaryFix" class="form-control" value="4000000" required>
-        </div>
-
-        <div class="form-group">
-          <label>6. Oylik o'rtacha daromad (KPI bilan)</label>
-          <input type="text" id="salaryMax" class="form-control" value="6 000 000 so'mgacha">
-        </div>
-
-        <div class="form-group">
-          <label>7. Nomzodga qo'yiladigan talablar (Jins, Yosh)</label>
-          <input type="text" id="requirements" class="form-control" value="Ayol nomzod (20–35 yosh), 6+ oy tajriba, AmoCRM">
-        </div>
-
-        <div class="form-group">
-          <label>8. Manzil & Orientir</label>
-          <input type="text" id="location" class="form-control" value="Quva tumani, Tolmozor (Elegant moyka)">
-        </div>
-
-        <div class="form-group">
-          <label>9. Ish grafigi & Smenalar</label>
-          <input type="text" id="schedule" class="form-control" value="6/1 (07:00-17:00 / 08:00-18:00 / 09:00-19:00)">
-        </div>
-
-        <button type="submit" class="btn-primary" style="margin-top: 10px;">
-          🚀 E'lonni Chop Etish (Mini App ga chiqarish)
+        <button class="btn btn-primary" onclick="showPage('add-vacancy', document.getElementById('nav-add'))">
+          ➕ Yangi vakansiya
         </button>
-      </form>
+      </div>
+      <div class="section-card">
+        <div class="section-head">📌 Faol vakansiyalar</div>
+        <div id="vacancyList">
+          <div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ PAGE: CANDIDATES ════ -->
+    <div class="page" id="page-candidates">
+      <div class="page-header">
+        <div>
+          <div class="page-title">👥 Soiskatellar bazasi</div>
+          <div class="page-sub">Ariza topshirgan nomzodlar ro'yxati</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="filter-bar">
+          <input class="filter-input" id="candSearch" placeholder="🔍 Ism yoki telefon..." oninput="filterCandidates()">
+          <select class="filter-select" id="cityFilter" onchange="filterCandidates()">
+            <option value="">📍 Barcha shaharlar</option>
+            <option>Quva</option>
+            <option>Farg'ona</option>
+            <option>Toshkent</option>
+            <option>Andijon</option>
+            <option>Namangan</option>
+            <option>Samarqand</option>
+            <option>Buxoro</option>
+          </select>
+          <select class="filter-select" id="statusFilter" onchange="filterCandidates()">
+            <option value="">📊 Barcha statuslar</option>
+            <option value="NEW">🆕 Yangi</option>
+            <option value="SUBMITTED">📨 Ariza topshirdi</option>
+            <option value="INVITED">✅ Taklif yuborildi</option>
+            <option value="REJECTED">❌ Rad etildi</option>
+          </select>
+        </div>
+
+        <div class="cand-list" id="candList">
+          <div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ PAGE: STATS ════ -->
+    <div class="page" id="page-stats">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📊 Statistika</div>
+          <div class="page-sub">Tizim ko'rsatkichlari</div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card" style="--accent:#FF5A36;">
+          <div class="stat-num" id="st-total">—</div>
+          <div class="stat-label">Jami arizalar</div>
+          <div class="stat-icon">📝</div>
+        </div>
+        <div class="stat-card" style="--accent:#22C55E;">
+          <div class="stat-num" id="st-invited">—</div>
+          <div class="stat-label">Taklif yuborildi</div>
+          <div class="stat-icon">✅</div>
+        </div>
+        <div class="stat-card" style="--accent:#60A5FA;">
+          <div class="stat-num" id="st-vac">—</div>
+          <div class="stat-label">Faol vakansiyalar</div>
+          <div class="stat-icon">💼</div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="section-head">🏆 Shahar bo'yicha taqsimot</div>
+        <div id="cityStats" style="padding:16px;"></div>
+      </div>
+    </div>
+
+    <!-- ════ PAGE: ADD VACANCY ════ -->
+    <div class="page" id="page-add-vacancy">
+      <div class="page-header">
+        <div>
+          <div class="page-title">➕ Yangi vakansiya qo'shish</div>
+          <div class="page-sub">Mini App da ko'rinadigan e'lon yarating</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head">🏢 Kompaniya logotipi</div>
+        <div style="padding:20px;">
+          <div class="upload-area" id="uploadArea" onclick="document.getElementById('logoFile').click()">
+            <input type="file" id="logoFile" accept="image/*" onchange="handleLogoUpload(event)" style="display:none;">
+            <img class="upload-preview" id="logoPreview" alt="Logo">
+            <div class="upload-icon" id="uploadIcon">📷</div>
+            <div class="upload-text" id="uploadText">Logotipni yuklash uchun bosing<br><small>JPG, PNG, WEBP — max 5MB</small></div>
+          </div>
+          <input type="hidden" id="logoUrl" value="">
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head">📝 Vakansiya ma'lumotlari</div>
+        <form id="vacancyForm" onsubmit="handleCreateVacancy(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Kompaniya nomi *</label>
+              <input class="form-input" id="companyName" placeholder="Flourenza" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Vakansiya nomi *</label>
+              <input class="form-input" id="vacancyTitle" placeholder="Sotuv menejeri" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fiks maosh (UZS) *</label>
+              <input class="form-input" id="salaryFix" type="number" placeholder="4000000" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">KPI bilan o'rtacha daromad</label>
+              <input class="form-input" id="salaryMax" placeholder="6 000 000 so'mgacha">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Manzil (shahar, orientir)</label>
+              <input class="form-input" id="location" placeholder="Quva, Tolmozor chorraha">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ish grafigi</label>
+              <input class="form-input" id="schedule" placeholder="6/1 (07:00–19:00)">
+            </div>
+            <div class="form-group full">
+              <label class="form-label">Nomzodga talablar</label>
+              <textarea class="form-input" id="requirements" rows="3" placeholder="Yosh, jins, tajriba, ko'nikmalar..."></textarea>
+            </div>
+          </div>
+          <div style="padding:0 20px 20px;">
+            <button type="submit" class="btn btn-primary btn-full" id="submitBtn">
+              🚀 E'lonni Mini App da chiqarish
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ════ MODALS ════ -->
+
+<!-- Invite Modal -->
+<div class="modal-overlay" id="inviteModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✅ Nomzodga taklif yuborish</div>
+      <button class="modal-close" onclick="closeModal('inviteModal')">×</button>
+    </div>
+    <div style="padding:20px;">
+      <div style="margin-bottom:16px; font-size:14px; color:var(--muted);">
+        Nomzod Telegram orqali taklif xabarini oladi. Xabarni tahrirlashingiz mumkin:
+      </div>
+      <textarea class="form-input" id="inviteMsg" rows="5" style="width:100%; margin-bottom:16px;">Assalomu alaykum! Marketing Markazi HR jamoasi siz bilan bog'lanmoqchi. Siz bizning talablarimizga to'liq mos kelasiz va siz bilan suhbat o'tkazmoqchimiz. Qulay vaqtingizni bildiring.</textarea>
+      <button class="btn btn-success btn-full" onclick="sendInvite()">
+        ✅ Taklif yuborish
+      </button>
     </div>
   </div>
+</div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      loadAdminVacancies();
-    });
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">❌ Nomzodni rad etish</div>
+      <button class="modal-close" onclick="closeModal('rejectModal')">×</button>
+    </div>
+    <div style="padding:20px;">
+      <div style="margin-bottom:16px; font-size:14px; color:var(--muted);">
+        Nomzod rad etilgani haqida Telegram xabar oladi:
+      </div>
+      <textarea class="form-input" id="rejectMsg" rows="4" style="width:100%; margin-bottom:16px;">Assalomu alaykum! Ushbu safar sizning nomzodingiz bizning talablarimizga mos kelmadi. Kelajakda yangi imkoniyatlar uchun profilingizni bizda saqlashda davom etamiz. Rahmat!</textarea>
+      <button class="btn btn-danger btn-full" onclick="sendReject()">
+        ❌ Rad etish xabarini yuborish
+      </button>
+    </div>
+  </div>
+</div>
 
-    async function loadAdminVacancies() {
-      const container = document.getElementById('adminVacancyList');
-      try {
-        const res = await fetch('/api/webapp/vacancies');
-        const data = await res.json();
-        const list = data.vacancies || [];
-        if (list.length === 0) {
-          container.innerHTML = '<div style="font-size:13px; color:var(--text-muted);">Hozircha vakansiyalar yo\'q</div>';
-          return;
-        }
-        container.innerHTML = list.map(v => `
-          <div class="vacancy-admin-item">
-            <div>
-              <strong style="font-size:15px; color:#fff;">${v.company} — ${v.title}</strong>
-              <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">📍 ${v.city} | 💰 ${v.salary}</div>
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── State ──
+  let allCandidates = [];
+  let currentCandidateId = null;
+  let currentCandidateTgId = null;
+
+  // ── Navigation ──
+  function showPage(name, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    if (el) el.classList.add('active');
+    if (name === 'candidates') loadCandidates();
+    if (name === 'vacancies') loadVacancies();
+    if (name === 'stats') loadStats();
+  }
+
+  // ── Toast ──
+  function toast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.innerHTML = (type === 'success' ? '✅ ' : '❌ ') + msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  // ── Modals ──
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+
+  // ── Clock ──
+  setInterval(() => {
+    document.getElementById('serverTime').textContent = new Date().toLocaleTimeString('uz-UZ');
+  }, 1000);
+
+  // ── VACANCIES ──
+  async function loadVacancies() {
+    const el = document.getElementById('vacancyList');
+    try {
+      const r = await fetch('/api/webapp/vacancies');
+      const d = await r.json();
+      const list = d.vacancies || [];
+      document.getElementById('vacBadge').textContent = list.length;
+      if (!list.length) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Hozircha vakansiyalar yo\'q</p></div>';
+        return;
+      }
+      el.innerHTML = list.map(v => `
+        <div class="vacancy-item">
+          <img class="vacancy-logo" src="${v.logoUrl || ''}" onerror="this.style.display='none'" alt="">
+          <div class="vacancy-info">
+            <div class="vacancy-title">${v.company} — ${v.title}</div>
+            <div class="vacancy-company">📍 ${v.city} | 💰 ${v.salary}</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm" onclick="editVacancy('${v.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteVacancy('${v.id}')">🗑</button>
+          </div>
+        </div>
+      `).join('');
+    } catch(e) {
+      el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Xato yuz berdi</p></div>';
+    }
+  }
+
+  async function deleteVacancy(id) {
+    if (!confirm('Vakansiyani o\'chirmoqchimisiz?')) return;
+    await fetch('/api/admin/vacancies/delete/' + id, { method:'POST' });
+    toast('Vakansiya o\'chirildi');
+    loadVacancies();
+  }
+
+  function editVacancy(id) {
+    toast('Tahrirlash: vakansiya IDsi — ' + id, 'success');
+  }
+
+  // ── UPLOAD LOGO ──
+  async function handleLogoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const preview = document.getElementById('logoPreview');
+    const icon = document.getElementById('uploadIcon');
+    const txt = document.getElementById('uploadText');
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+      icon.style.display = 'none';
+      txt.textContent = '✅ ' + file.name;
+    };
+    reader.readAsDataURL(file);
+
+    // Upload
+    const fd = new FormData();
+    fd.append('logo', file);
+    try {
+      const r = await fetch('/api/admin/upload/company-logo', { method:'POST', body:fd });
+      const d = await r.json();
+      if (d.url) {
+        document.getElementById('logoUrl').value = d.url;
+        toast('Logotip yuklandi!');
+      }
+    } catch(e) {
+      toast('Yuklash xatosi', 'error');
+    }
+  }
+
+  // ── CREATE VACANCY ──
+  async function handleCreateVacancy(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Saqlanmoqda...';
+
+    const payload = {
+      companyName: document.getElementById('companyName').value,
+      logoUrl: document.getElementById('logoUrl').value,
+      vacancyTitle: document.getElementById('vacancyTitle').value,
+      salaryFix: document.getElementById('salaryFix').value,
+      salaryMax: document.getElementById('salaryMax').value,
+      requirements: document.getElementById('requirements').value,
+      location: document.getElementById('location').value,
+      schedule: document.getElementById('schedule').value,
+    };
+    try {
+      await fetch('/api/admin/vacancies/create', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+      toast('✅ Vakansiya saqlandi va Mini App da ko\'rindi!');
+      e.target.reset();
+      document.getElementById('logoPreview').style.display = 'none';
+      document.getElementById('uploadIcon').style.display = 'block';
+      document.getElementById('uploadText').textContent = 'Logotipni yuklash uchun bosing';
+      showPage('vacancies', document.getElementById('nav-vacancies'));
+    } catch(err) {
+      toast('Xato yuz berdi', 'error');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '🚀 E\'lonni Mini App da chiqarish';
+  }
+
+  // ── CANDIDATES ──
+  async function loadCandidates() {
+    try {
+      const r = await fetch('/api/admin/candidates');
+      const d = await r.json();
+      allCandidates = d.candidates || [];
+      document.getElementById('candBadge').textContent = allCandidates.length;
+      renderCandidates(allCandidates);
+    } catch(e) {
+      document.getElementById('candList').innerHTML = 
+        '<div class="empty-state"><div class="icon">⚠️</div><p>Xato yuz berdi</p></div>';
+    }
+  }
+
+  function renderCandidates(list) {
+    const el = document.getElementById('candList');
+    if (!list.length) {
+      el.innerHTML = '<div class="empty-state"><div class="icon">👤</div><p>Soiskatel topilmadi</p></div>';
+      return;
+    }
+    el.innerHTML = list.map(c => {
+      const initials = (c.fullName||'?')[0].toUpperCase();
+      const statusBadge = {
+        'NEW': '<span class="badge badge-new">🆕 Yangi</span>',
+        'SUBMITTED': '<span class="badge badge-pending">📨 Ariza</span>',
+        'INVITED': '<span class="badge badge-invited">✅ Taklif</span>',
+        'REJECTED': '<span class="badge badge-rejected">❌ Rad</span>',
+      }[c.status] || '<span class="badge badge-new">🆕 Yangi</span>';
+
+      return `
+        <div class="cand-card">
+          <div class="cand-avatar">
+            ${c.avatarUrl ? `<img src="${c.avatarUrl}" alt="">` : initials}
+          </div>
+          <div class="cand-info">
+            <div class="cand-name">${c.fullName || 'Ismsiz'}</div>
+            <div class="cand-meta">
+              ${c.phone ? `<span>📞 ${c.phone}</span>` : ''}
+              ${c.city ? `<span>📍 ${c.city}</span>` : ''}
+              ${c.vacancyTitle ? `<span>💼 ${c.vacancyTitle}</span>` : ''}
+              ${statusBadge}
             </div>
-            <div style="display:flex; gap:6px;">
-              <button class="btn-secondary" onclick="editVacancy('${v.id}')">✏️ Tahrirlash</button>
-              <button class="btn-secondary" style="color:#F87171;" onclick="deleteVacancy('${v.id}')">🗑 O'chirish</button>
+          </div>
+          <div class="cand-actions">
+            ${c.status !== 'INVITED' ? `<button class="btn btn-success btn-sm" onclick="openInvite('${c.id}','${c.telegramUserId}')">✅ Taklif</button>` : ''}
+            ${c.status !== 'REJECTED' ? `<button class="btn btn-danger btn-sm" onclick="openReject('${c.id}','${c.telegramUserId}')">❌ Rad</button>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function filterCandidates() {
+    const q = document.getElementById('candSearch').value.toLowerCase();
+    const city = document.getElementById('cityFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const filtered = allCandidates.filter(c => {
+      const matchQ = !q || (c.fullName||'').toLowerCase().includes(q) || (c.phone||'').includes(q);
+      const matchCity = !city || (c.city||'').toLowerCase().includes(city.toLowerCase());
+      const matchStatus = !status || c.status === status;
+      return matchQ && matchCity && matchStatus;
+    });
+    renderCandidates(filtered);
+  }
+
+  // ── INVITE / REJECT ──
+  function openInvite(id, tgId) {
+    currentCandidateId = id;
+    currentCandidateTgId = tgId;
+    openModal('inviteModal');
+  }
+  function openReject(id, tgId) {
+    currentCandidateId = id;
+    currentCandidateTgId = tgId;
+    openModal('rejectModal');
+  }
+
+  async function sendInvite() {
+    const msg = document.getElementById('inviteMsg').value;
+    try {
+      await fetch('/api/admin/candidates/' + currentCandidateId + '/invite', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ message: msg, telegramUserId: currentCandidateTgId })
+      });
+      toast('✅ Taklif xabari yuborildi!');
+      closeModal('inviteModal');
+      loadCandidates();
+    } catch(e) { toast('Xato', 'error'); }
+  }
+
+  async function sendReject() {
+    const msg = document.getElementById('rejectMsg').value;
+    try {
+      await fetch('/api/admin/candidates/' + currentCandidateId + '/reject', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ message: msg, telegramUserId: currentCandidateTgId })
+      });
+      toast('Rad etish xabari yuborildi');
+      closeModal('rejectModal');
+      loadCandidates();
+    } catch(e) { toast('Xato', 'error'); }
+  }
+
+  // ── STATS ──
+  async function loadStats() {
+    try {
+      const [vr, cr] = await Promise.all([
+        fetch('/api/webapp/vacancies').then(r=>r.json()),
+        fetch('/api/admin/candidates').then(r=>r.json())
+      ]);
+      const cands = cr.candidates || [];
+      const vacs = vr.vacancies || [];
+      document.getElementById('st-total').textContent = cands.length;
+      document.getElementById('st-invited').textContent = cands.filter(c=>c.status==='INVITED').length;
+      document.getElementById('st-vac').textContent = vacs.length;
+
+      // City breakdown
+      const cities = {};
+      cands.forEach(c => { if(c.city) cities[c.city] = (cities[c.city]||0)+1; });
+      const cityEl = document.getElementById('cityStats');
+      if (!Object.keys(cities).length) {
+        cityEl.innerHTML = '<p style="color:var(--muted);font-size:13px;">Ma\'lumot yo\'q</p>';
+        return;
+      }
+      const max = Math.max(...Object.values(cities));
+      cityEl.innerHTML = Object.entries(cities)
+        .sort((a,b)=>b[1]-a[1])
+        .map(([city, count]) => `
+          <div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:4px;">
+              <span>📍 ${city}</span><span>${count} kishi</span>
+            </div>
+            <div style="background:var(--card-border);border-radius:4px;height:6px;overflow:hidden;">
+              <div style="height:6px;border-radius:4px;background:var(--primary);width:${Math.round(count/max*100)}%;transition:width 0.5s"></div>
             </div>
           </div>
         `).join('');
-      } catch (err) {
-        console.error('Error loading vacancies:', err);
-      }
-    }
+    } catch(e) {}
+  }
 
-    async function handleCreateVacancy(e) {
-      e.preventDefault();
-      const payload = {
-        companyName: document.getElementById('companyName').value,
-        logoUrl: document.getElementById('logoUrl').value,
-        leaderName: document.getElementById('leaderName').value,
-        vacancyTitle: document.getElementById('vacancyTitle').value,
-        salaryFix: document.getElementById('salaryFix').value,
-        salaryMax: document.getElementById('salaryMax').value,
-        requirements: document.getElementById('requirements').value,
-        location: document.getElementById('location').value,
-        schedule: document.getElementById('schedule').value,
-      };
-
-      try {
-        await fetch('/api/admin/vacancies/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        alert('✅ Vakansiya muvaffaqiyatli saqlandi va Mini App da paydo bo\'ldi!');
-        loadAdminVacancies();
-        window.location.href = '/app';
-      } catch (err) {
-        alert('Vakansiya saqlandi!');
-        window.location.href = '/app';
-      }
-    }
-
-    async function deleteVacancy(id) {
-      if (confirm('Rostdan ham ushbu vakansiyani o\'chirmoqchimisiz?')) {
-        try {
-          await fetch('/api/admin/vacancies/delete/' + id, { method: 'POST' });
-          alert('✅ Vakansiya o\'chirildi');
-          loadAdminVacancies();
-        } catch (e) {
-          alert('Vakansiya arxivlandi');
-        }
-      }
-    }
-
-    function editVacancy(id) {
-      alert('Tahrirlash rejimi faollashtirildi. Formani to\'ldirib qayta chop eting.');
-    }
-  </script>
+  // ── INIT ──
+  loadVacancies();
+</script>
 </body>
 </html>

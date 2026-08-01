@@ -459,10 +459,33 @@
     }
 
     .nav-item.active { color: var(--primary); background: var(--primary-light); }
+    .nav-item.active .nav-icon { animation: navPulse 0.4s ease; }
     .nav-icon { font-size: 20px; }
     .hidden { display: none !important; }
     .full-width { width: 100%; }
     .text-center { text-align: center; }
+
+    /* ── Animations ── */
+    @keyframes slideIn {
+      from { opacity:0; transform:translateX(18px); }
+      to { opacity:1; transform:translateX(0); }
+    }
+    @keyframes slideOut {
+      from { opacity:1; transform:translateX(0); }
+      to { opacity:0; transform:translateX(-18px); }
+    }
+    @keyframes slideUp {
+      from { opacity:0; transform:translateY(16px); }
+      to { opacity:1; transform:translateY(0); }
+    }
+    @keyframes navPulse {
+      0% { transform:scale(1); }
+      50% { transform:scale(1.25); }
+      100% { transform:scale(1); }
+    }
+    @keyframes fadeIn {
+      from { opacity:0; } to { opacity:1; }
+    }
   </style>
 </head>
 <body>
@@ -617,6 +640,6 @@
     </nav>
   </div>
 
-  <script src="app.js?v=2026_07_31_v3"></script>
+  <script src="app.js?v=2026_08_01_v4"></script>
 </body>
 </html>

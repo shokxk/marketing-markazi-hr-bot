@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
+import multer from 'multer';
 import { config } from './config';
 import { createBotInstance } from './bot/bot';
 
@@ -167,6 +168,146 @@ app.post('/api/admin/vacancies/delete/:id', async (req, res) => {
   }
 });
 
+// ── Company Logo Direct Upload ──
+const logoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.resolve(process.cwd(), 'uploads/company-logos');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `logo-${Date.now()}${ext}`);
+  }
+});
+const logoUpload = multer({ storage: logoStorage, limits: { fileSize: 5 * 1024 * 1024 } });
+
+app.post('/api/admin/upload/company-logo', logoUpload.single('logo'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Fayl topilmadi' });
+    const url = `/uploads/company-logos/${req.file.filename}`;
+    res.json({ status: 'ok', url });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Serve uploaded company logos
+app.use('/uploads/company-logos', express.static(path.resolve(process.cwd(), 'uploads/company-logos')));
+
+// ── Candidates List (Admin) ──
+app.get('/api/admin/candidates', async (req, res) => {
+  try {
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    const users = await prisma.user.findMany({
+      include: {
+        applications: {
+          where: { isActive: true } as any,
+          include: { vacancy: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    await prisma.$disconnect();
+
+    const candidates = users.map((u: any) => {
+      const latestApp = u.applications?.[0];
+      return {
+        id: u.id,
+        telegramUserId: u.telegramUserId?.toString(),
+        fullName: u.fullName || 'Ismsiz',
+        phone: u.phone,
+        city: u.city,
+        avatarUrl: u.avatarUrl,
+        bio: u.bio,
+        skills: u.skills,
+        status: latestApp?.status || 'NEW',
+        vacancyTitle: latestApp?.vacancy?.title,
+        createdAt: u.createdAt,
+      };
+    });
+
+    res.json({ candidates });
+  } catch (err: any) {
+    res.json({ candidates: [] });
+  }
+});
+
+// ── Invite Candidate via Telegram ──
+app.post('/api/admin/candidates/:id/invite', async (req, res) => {
+  try {
+    const { message, telegramUserId } = req.body;
+    const { id } = req.params;
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    // Update application status
+    await prisma.application.updateMany({
+      where: { userId: id },
+      data: { status: 'INVITED' }
+    });
+
+    // Send Telegram message
+    if (telegramUserId && config.botToken) {
+      try {
+        const { Bot } = await import('grammy');
+        const bot = new Bot(config.botToken);
+        await bot.api.sendMessage(
+          telegramUserId,
+          `✅ *Marketing Markazi HR*\n\n${message || 'Tabriklaymiz! Siz bizning talablarimizga mos kelasiz. Tez orada siz bilan bog\'lanamiz.'}`,
+          { parse_mode: 'Markdown' }
+        );
+      } catch (tgErr: any) {
+        console.error('Telegram invite error:', tgErr.message);
+      }
+    }
+
+    await prisma.$disconnect();
+    res.json({ status: 'ok', message: 'Taklif yuborildi' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Reject Candidate via Telegram ──
+app.post('/api/admin/candidates/:id/reject', async (req, res) => {
+  try {
+    const { message, telegramUserId } = req.body;
+    const { id } = req.params;
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    // Update application status
+    await prisma.application.updateMany({
+      where: { userId: id },
+      data: { status: 'REJECTED' }
+    });
+
+    // Send Telegram message
+    if (telegramUserId && config.botToken) {
+      try {
+        const { Bot } = await import('grammy');
+        const bot = new Bot(config.botToken);
+        await bot.api.sendMessage(
+          telegramUserId,
+          `ℹ️ *Marketing Markazi HR*\n\n${message || 'Ushbu safar sizning nomzodingiz mos kelmadi. Kelajakda yangi vakansiyalarimizni kuzatib boring. Rahmat!'}`,
+          { parse_mode: 'Markdown' }
+        );
+      } catch (tgErr: any) {
+        console.error('Telegram reject error:', tgErr.message);
+      }
+    }
+
+    await prisma.$disconnect();
+    res.json({ status: 'ok', message: 'Rad etildi' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/webapp/submit', async (req, res) => {
   try {
     const { vacancyTitle, companyName, answers, user } = req.body;
@@ -175,11 +316,39 @@ app.post('/api/webapp/submit', async (req, res) => {
     const candidateName = answers.full_name || [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Nomzod';
     const phone = answers.phone || 'Ko\'rsatilmadi';
     const age = answers.age || '-';
-    const city = answers.city || 'Quva / Toshkent';
+    const city = answers.city || answers.shahar || '';
     const exp = answers.experience || '6-12 oy';
     const faceId = answers.face_id || 'Foto tasdiq berildi';
 
-    // 1. Dispatch message to HR Telegram Group (-1002923694952)
+    // Save candidate profile to DB
+    if (user?.id) {
+      try {
+        const { PrismaClient } = await import('@prisma/client');
+        const prisma = new PrismaClient();
+        await prisma.user.upsert({
+          where: { telegramUserId: BigInt(user.id) },
+          create: {
+            telegramUserId: BigInt(user.id),
+            telegramUsername: user.username,
+            fullName: candidateName,
+            phone: answers.phone || null,
+            city: city || null,
+            avatarUrl: answers.face_id_url || null,
+          },
+          update: {
+            fullName: candidateName,
+            phone: answers.phone || undefined,
+            city: city || undefined,
+            avatarUrl: answers.face_id_url || undefined,
+          }
+        });
+        await prisma.$disconnect();
+      } catch (dbErr: any) {
+        console.error('DB save error:', dbErr.message);
+      }
+    }
+
+    // 1. Dispatch message to HR Telegram Group
     try {
       const { Bot } = await import('grammy');
       const bot = new Bot(config.botToken);
