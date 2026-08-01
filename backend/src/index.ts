@@ -427,6 +427,39 @@ app.post('/api/webapp/submit', async (req, res) => {
       } else {
         await bot.api.sendMessage(config.hrTelegramGroupId, hrGroupMsg, { parse_mode: 'HTML' });
       }
+
+      // 2. Generate & Send PDF Resume Document to HR Group
+      try {
+        const { generateCandidatePdfResume } = await import('./services/pdf-resume.service');
+        const { InputFile } = await import('grammy');
+        let faceLocalPath: string | undefined = undefined;
+        if (answers.face_id_url) {
+          const relPath = answers.face_id_url.replace(/^\/+/, '');
+          faceLocalPath = path.resolve(process.cwd(), relPath);
+        }
+
+        const pdfPath = await generateCandidatePdfResume({
+          candidateName,
+          phone,
+          age,
+          city,
+          companyName: companyName || 'Flourenza',
+          vacancyTitle: vacancyTitle || 'Call Center Sotuv Menejeri',
+          answers,
+          faceIdPath: faceLocalPath
+        });
+
+        if (fs.existsSync(pdfPath)) {
+          await bot.api.sendDocument(config.hrTelegramGroupId, new InputFile(pdfPath), {
+            caption: `📄 <b>NOMZOD REZYUMESI (PDF)</b> — ${candidateName}`,
+            parse_mode: 'HTML'
+          });
+          console.log('✅ Generated & Sent candidate PDF resume to HR Group!');
+        }
+      } catch (pdfErr: any) {
+        console.error('PDF Generation / Dispatch error:', pdfErr.message);
+      }
+
       console.log(`✅ Successfully posted WebApp application to Telegram HR Group ${config.hrTelegramGroupId}`);
     } catch (botErr: any) {
       console.error('⚠️ Telegram HR Group posting error:', botErr.message);
