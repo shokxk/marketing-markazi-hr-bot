@@ -117,19 +117,12 @@ export async function handleQuestionAnswer(ctx: BotContext, answerValue: string)
   });
   const q = questions[step - 1];
 
-  // Validation rules
+  // Gentle Validation rules
   if (q.code === 'Q1_FULL_NAME') {
-    if (answerValue.length < 5 || answerValue.split(' ').length < 2 || /\d/.test(answerValue)) {
-      await ctx.reply('⚠️ Iltimos, Ism va Familiyangizni to‘liq yozing! (Masalan: <i>Karimov Azizbek</i>)', {
+    if (answerValue.trim().length < 2) {
+      await ctx.reply('⚠️ Iltimos, ismingizni kiriting:', {
         parse_mode: 'HTML',
       });
-      return;
-    }
-  }
-
-  if (q.code === 'Q20_SELF_INTRO') {
-    if (answerValue.length < 30) {
-      await ctx.reply('⚠️ O‘zingiz haqingizda kamida 30 ta belgidan iborat qisqa matn yozing.');
       return;
     }
   }
