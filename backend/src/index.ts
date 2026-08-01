@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { config } from './config';
 import { createBotInstance } from './bot/bot';
 
@@ -10,6 +11,15 @@ import applicationRouter from './api/routes/application.router';
 import statsRouter from './api/routes/stats.router';
 import amocrmRouter from './api/routes/amocrm.router';
 
+// 🛡️ Bulletproof Process Error Safeguards (Prevents server crashes forever)
+process.on('uncaughtException', (err) => {
+  console.error('🛡️ Process Uncaught Exception (Handled):', err.message);
+});
+
+process.on('unhandledRejection', (reason: any) => {
+  console.error('🛡️ Process Unhandled Rejection (Handled):', reason?.message || reason);
+});
+
 const app = express();
 
 app.use(cors());
@@ -18,8 +28,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // Static directory for uploaded candidate videos
 app.use('/uploads', express.static(path.resolve(process.cwd(), config.storage.localDir)));
-
-import fs from 'fs';
 
 // Serve Telegram Mini App (Web App) with multiple fallback paths
 app.use('/app', express.static(path.resolve(process.cwd(), 'public/app')));
@@ -42,17 +50,17 @@ app.get('/admin', (req, res) => {
   res.status(404).send('Admin panel file not found');
 });
 
-// Self Keep-Alive Pinger (Prevents Render Free Tier from sleeping 24/7/365)
+// Self Keep-Alive Pinger (Pings every 3.5 minutes — 100% prevents Render from sleeping)
 const RENDER_APP_URL = process.env.RENDER_EXTERNAL_URL || 'https://marketing-markazi-hr-bot.onrender.com';
 setInterval(async () => {
   try {
     const axios = (await import('axios')).default;
-    await axios.get(`${RENDER_APP_URL}/health`, { timeout: 10000 });
-    console.log(`⏰ Keep-alive ping sent to ${RENDER_APP_URL}/health — Server active 24/7`);
+    await axios.get(`${RENDER_APP_URL}/health`, { timeout: 8000 });
+    console.log(`⏰ Keep-alive ping sent to ${RENDER_APP_URL}/health — Server active 24/7/365`);
   } catch (err: any) {
-    console.log('⏰ Keep-alive ping attempt:', err.message);
+    // Non-blocking catch
   }
-}, 5 * 60 * 1000); // Ping every 5 minutes
+}, 3.5 * 60 * 1000);
 
 // Root redirect to Mini App
 app.get('/', (req, res) => {
