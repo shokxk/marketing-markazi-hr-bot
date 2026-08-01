@@ -229,7 +229,6 @@ app.get('/api/admin/candidates', async (req, res) => {
     const users = await prisma.user.findMany({
       include: {
         applications: {
-          where: { isActive: true } as any,
           include: { vacancy: true },
           orderBy: { createdAt: 'desc' },
           take: 1,
@@ -251,7 +250,7 @@ app.get('/api/admin/candidates', async (req, res) => {
         bio: u.bio,
         skills: u.skills,
         status: latestApp?.status || 'NEW',
-        vacancyTitle: latestApp?.vacancy?.title,
+        vacancyTitle: latestApp?.vacancy?.title || 'Call Center Sotuv Menejeri',
         createdAt: u.createdAt,
       };
     });
@@ -413,9 +412,15 @@ app.post('/api/webapp/submit', async (req, res) => {
         `🔗 <b>amoCRM:</b> <a href="https://${config.amocrm.subdomain}">Yangi Bitim yaratildi</a>`;
 
       if (answers.face_id_url) {
-        const fullPhotoUrl = answers.face_id_url.startsWith('http') ? answers.face_id_url : `${config.appUrl}${answers.face_id_url}`;
         try {
-          await bot.api.sendPhoto(config.hrTelegramGroupId, fullPhotoUrl, { caption: hrGroupMsg, parse_mode: 'HTML' });
+          const { InputFile } = await import('grammy');
+          const relPath = answers.face_id_url.replace(/^\/+/, '');
+          const localPath = path.resolve(process.cwd(), relPath);
+          if (fs.existsSync(localPath)) {
+            await bot.api.sendPhoto(config.hrTelegramGroupId, new InputFile(localPath), { caption: hrGroupMsg, parse_mode: 'HTML' });
+          } else {
+            await bot.api.sendMessage(config.hrTelegramGroupId, hrGroupMsg, { parse_mode: 'HTML' });
+          }
         } catch {
           await bot.api.sendMessage(config.hrTelegramGroupId, hrGroupMsg, { parse_mode: 'HTML' });
         }
@@ -495,6 +500,37 @@ async function autoSeed() {
         }
       });
       console.log('✅ Rich Flourenza Call Center Sotuv Menejeri vacancy created!');
+    }
+
+    // Seed 20 Standard Questions for Telegram Chat-Bot if empty
+    const questionCount = await prisma.question.count();
+    if (questionCount === 0) {
+      const questions = [
+        { code: 'Q1_FULL_NAME', textUz: '1. Sizning to\'liq ismingiz (F.I.Sh.)?', answerType: 'TEXT', sortOrder: 1 },
+        { code: 'Q2_PHONE', textUz: '2. Bog\'lanish uchun telefon raqamingiz?', answerType: 'PHONE', sortOrder: 2 },
+        { code: 'Q3_AGE', textUz: '3. Yoshingiz nechada? (20 – 35 yosh ayol nomzod)', answerType: 'NUMBER', sortOrder: 3 },
+        { code: 'Q4_CITY', textUz: '4. Yashash shahringiz va tumaningiz?', answerType: 'TEXT', sortOrder: 4 },
+        { code: 'Q5_MARITAL_STATUS', textUz: '5. Oilaviy ahvolingiz?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Turmush qurmagan', 'Turmush qurgan (farzandli)', 'Farqi yo\'q']), sortOrder: 5 },
+        { code: 'Q6_EDUCATION_LEVEL', textUz: '6. Ma\'lumotingiz darajasi?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Oliy (Bakalavr/Magistr)', 'O\'rta maxsus (Kollej/Litsey)', 'O\'rta maktab']), sortOrder: 6 },
+        { code: 'Q7_EDUCATION_PLACE', textUz: '7. Qaysi o\'quv muassasasini tamomlagansiz?', answerType: 'TEXT', sortOrder: 7 },
+        { code: 'Q8_CALLCENTER_EXP', textUz: '8. Call Center yoki Sotuv sohasida tajribangiz bormi?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Ha, 6-12 oy tajribam bor', 'Ha, 1 yildan ortiq tajribam bor', 'Yo\'q, lekin tez o\'rganaman']), sortOrder: 8 },
+        { code: 'Q9_LAST_JOB', textUz: '9. Oxirgi ish joyingiz va lavozimingiz?', answerType: 'TEXT', sortOrder: 9 },
+        { code: 'Q10_REASON_LEAVING', textUz: '10. Oxirgi ish joyingizdan ketish sababi?', answerType: 'TEXT', sortOrder: 10 },
+        { code: 'Q11_AMOCRM_EXP', textUz: '11. amoCRM va kompyuter dasturlari bilan ishlaganmisiz?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Ha, amoCRM bilan mukammal ishlayman', 'Kompyuterni bilaman, amoCRM o\'rganaman', 'Yo\'q, yangi o\'rganaman']), sortOrder: 11 },
+        { code: 'Q12_COMPUTER_SKILLS', textUz: '12. Qaysi kompyuter dasturlarini bilasiz?', answerType: 'TEXT', sortOrder: 12 },
+        { code: 'Q13_LANGUAGES', textUz: '13. Qaysi tillarda ravon muloqot qilasiz?', answerType: 'CHOICE', optionsJson: JSON.stringify(['O\'zbek tili — Mukammal', 'O\'zbek va Rus tili — Erkin muloqot']), sortOrder: 13 },
+        { code: 'Q14_WORK_SCHEDULE', textUz: '14. 6/1 grafik va smenalarga tayyormisiz?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Ha, to\'liq tayyorman', 'Grafik bo\'yicha savollarim bor']), sortOrder: 14 },
+        { code: 'Q15_SALARY_EXPECTATION', textUz: '15. Kutilayotgan oylik maosh?', answerType: 'TEXT', sortOrder: 15 },
+        { code: 'Q16_START_DATE', textUz: '16. Qachondan ishni boshlashingiz mumkin?', answerType: 'TEXT', sortOrder: 16 },
+        { code: 'Q17_SALES_CASE', textUz: '17. E\'tirozlar bilan ishlash: Mijoz "Qimmat" desa nima degan bo\'lardingiz?', answerType: 'TEXT', sortOrder: 17 },
+        { code: 'Q18_SOFT_SKILLS', textUz: '18. O\'zingizdagi eng kuchli 3 ta sifatni ko\'rsating', answerType: 'TEXT', sortOrder: 18 },
+        { code: 'Q19_MOTIVATION', textUz: '19. Nega aynan ushbu kompaniya jamoasida ishlamoqchisiz?', answerType: 'TEXT', sortOrder: 19 },
+        { code: 'Q20_SELF_INTRO', textUz: '20. 📸 Face ID / Foto: O\'zingizning aniq tushgan suratingizni yuboring', answerType: 'TEXT', sortOrder: 20 },
+      ];
+      for (const qData of questions) {
+        await prisma.question.create({ data: qData });
+      }
+      console.log('✅ 20 Standard questions auto-seeded into DB!');
     }
 
     await prisma.$disconnect();
