@@ -31,8 +31,8 @@ const standardQuestions = [
   { id: '16', code: 'start_date', text: '16. Qachondan ishni boshlashingiz mumkin?', type: 'TEXT', placeholder: 'Masalan: Ertaga yoki 3 kundan keyin' },
   { id: '17', code: 'sales_case', text: '17. E\'tirozlar bilan ishlash: Mijoz "Qimmat" desa nima degan bo\'lardingiz?', type: 'TEXT', placeholder: 'Qisqacha javobingiz...' },
   { id: '18', code: 'soft_skills', text: '18. O\'zingizdagi eng kuchli 3 ta sifatni ko\'rsating', type: 'TEXT', placeholder: 'Masalan: Intizom, Muloqot, Stressga chidamlilik' },
-  { id: '19', code: 'motivation', text: '19. Nega aynan Flourenza jamoasida ishlamoqchisiz?', type: 'TEXT', placeholder: 'Sababini yozing...' },
-  { id: '20', code: 'face_id', text: '20. 📸 Face ID / Foto tasdiqlash: O\'zingizning aniq tushgan suratingizni yoki video havolani kiriting', type: 'TEXT', placeholder: 'Surat havolasi yoki "Telegram orqali yubordim"' }
+  { id: '19', code: 'motivation', text: '19. Nega aynan ushbu kompaniya jamoasida ishlamoqchisiz?', type: 'TEXT', placeholder: 'Sababini yozing...' },
+  { id: '20', code: 'face_id', text: '20. 📸 Face ID / Foto tasdiqlash: O\'zingizning aniq tushgan suratingizni yuboring', type: 'FACE_ID' }
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -155,7 +155,13 @@ function renderCurrentQuestion() {
   if (fill) fill.style.width = `${percent}%`;
   if (step) step.textContent = `Bosqich ${currentStepIndex + 1}/${standardQuestions.length}`;
   if (perc) perc.textContent = `${percent}%`;
-  if (qText) qText.textContent = q.text;
+  
+  // Dynamic question text for Question 19 (Company Name)
+  if (q.code === 'motivation') {
+    if (qText) qText.textContent = `19. Nega aynan ${currentVacancy?.company || 'ushbu kompaniya'} jamoasida ishlamoqchisiz?`;
+  } else {
+    if (qText) qText.textContent = q.text;
+  }
 
   const wrapper = document.getElementById('questionInputWrapper');
   if (!wrapper) return;
@@ -189,6 +195,31 @@ function renderCurrentQuestion() {
         }, 180);
       });
     });
+  } else if (q.type === 'FACE_ID') {
+    const photoUrl = candidateAnswers['face_id_url'] || '';
+    wrapper.innerHTML = `
+      <div style="text-align:center; padding:10px 0;">
+        <input type="file" id="faceCameraInput" accept="image/*" capture="user" style="display:none;" onchange="handleFaceIdFileSelect(event)">
+        
+        ${photoUrl ? `
+          <div style="margin-bottom:16px;">
+            <img src="${photoUrl}" style="width:130px; height:130px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); box-shadow:0 8px 24px rgba(255,90,54,0.3); margin:0 auto; display:block;">
+            <div style="margin-top:10px; font-size:14px; font-weight:800; color:#22C55E;">✅ Face ID Surat Saqlandi</div>
+          </div>
+          <button type="button" class="btn-secondary" style="width:100%; padding:12px; margin-bottom:8px;" onclick="document.getElementById('faceCameraInput').click()">
+            📸 Qayta rasmga tushish
+          </button>
+        ` : `
+          <div style="margin-bottom:16px;">
+            <div style="width:100px; height:100px; border-radius:50%; background:rgba(255,90,54,0.12); border:2px dashed var(--primary); display:flex; align-items:center; justify-content:center; margin:0 auto; font-size:42px;">📷</div>
+            <div style="margin-top:12px; font-size:13px; color:var(--text-muted); font-weight:600;">Yuzingiz tushgan o'z rasmigizni oling (Face ID)</div>
+          </div>
+          <button type="button" class="btn-primary" style="width:100%; padding:14px; font-size:15px;" onclick="document.getElementById('faceCameraInput').click()">
+            📸 Rasmga Tushish (Face ID)
+          </button>
+        `}
+      </div>
+    `;
   } else {
     const val = candidateAnswers[q.code] || '';
     wrapper.innerHTML = `
@@ -213,6 +244,41 @@ function renderCurrentQuestion() {
   if (btnNext) btnNext.textContent = currentStepIndex === standardQuestions.length - 1 ? 'Topshirish 🚀' : 'Keyingisi →';
 }
 
+async function handleFaceIdFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const btnNext = document.getElementById('btnNext');
+  if (btnNext) {
+    btnNext.disabled = true;
+    btnNext.textContent = 'Yuklanmoqda...';
+  }
+
+  const formData = new FormData();
+  formData.append('photo', file);
+
+  try {
+    const res = await fetch('/api/webapp/upload-face-id', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (data.url) {
+      candidateAnswers['face_id'] = 'Foto yuklandi';
+      candidateAnswers['face_id_url'] = data.url;
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      renderCurrentQuestion();
+    }
+  } catch (err) {
+    alert('Rasm yuklashda xatolik yuz berdi. Qayta urinib ko\'ring.');
+  }
+
+  if (btnNext) {
+    btnNext.disabled = false;
+    btnNext.textContent = currentStepIndex === standardQuestions.length - 1 ? 'Topshirish 🚀' : 'Keyingisi →';
+  }
+}
+
 function updateAnswer(code, val) {
   candidateAnswers[code] = val;
 }
@@ -226,7 +292,7 @@ function prevQuestion() {
 
 async function nextQuestion() {
   const q = standardQuestions[currentStepIndex];
-  if (q.type !== 'CHOICE') {
+  if (q.type !== 'CHOICE' && q.type !== 'FACE_ID') {
     const input = document.getElementById('wizardInput');
     if (input) candidateAnswers[q.code] = input.value;
   }

@@ -195,6 +195,32 @@ app.post('/api/admin/upload/company-logo', logoUpload.single('logo'), (req, res)
 // Serve uploaded company logos
 app.use('/uploads/company-logos', express.static(path.resolve(process.cwd(), 'uploads/company-logos')));
 
+// ── Face ID Photo Upload (Candidate Selfie Camera) ──
+const faceStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.resolve(process.cwd(), 'uploads/face-ids');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `face-${Date.now()}${ext}`);
+  }
+});
+const faceUpload = multer({ storage: faceStorage, limits: { fileSize: 10 * 1024 * 1024 } });
+
+app.post('/api/webapp/upload-face-id', faceUpload.single('photo'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Fayl topilmadi' });
+    const url = `/uploads/face-ids/${req.file.filename}`;
+    res.json({ status: 'ok', url });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.use('/uploads/face-ids', express.static(path.resolve(process.cwd(), 'uploads/face-ids')));
+
 // ── Candidates List (Admin) ──
 app.get('/api/admin/candidates', async (req, res) => {
   try {
