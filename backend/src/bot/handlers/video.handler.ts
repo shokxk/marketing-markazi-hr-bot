@@ -53,6 +53,20 @@ export async function handleVideoReceived(ctx: BotContext) {
     });
   }
 
+  // Dispatch video to HR Telegram Group
+  try {
+    const { config } = await import('../../config');
+    const captionText = `🎥 <b>YANGI VIDEO TANISHTIRUV</b>\n👤 <b>Ism:</b> ${ctx.from?.first_name || 'Nomzod'} (@${ctx.from?.username || 'yo\'q'})\n⏱ <b>Davomiyligi:</b> ${duration} sek`;
+    if (ctx.message?.video_note) {
+      await ctx.api.sendVideoNote(config.hrTelegramGroupId, fileId);
+      await ctx.api.sendMessage(config.hrTelegramGroupId, captionText, { parse_mode: 'HTML' });
+    } else if (ctx.message?.video) {
+      await ctx.api.sendVideo(config.hrTelegramGroupId, fileId, { caption: captionText, parse_mode: 'HTML' });
+    }
+  } catch (hrErr: any) {
+    console.error('HR Group video dispatch error:', hrErr.message);
+  }
+
   await ctx.reply('✅ Video tanishtiruv qabul qilindi!');
 
   // Proceed to preview

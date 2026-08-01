@@ -61,11 +61,11 @@ export function createBotInstance() {
   bot.command('status', handleStatusCheckCommand);
   bot.command('help', handleHelpCommand);
 
-  // Hears listeners for bottom main menu buttons
+  // Hears listeners for bottom main menu buttons (flexible apostrophes)
   bot.hears(/Anketani boshlash/i, handleStartAnketa);
   bot.hears(/Arizam holati/i, handleStatusCheckCommand);
   bot.hears(/Yordam/i, handleHelpCommand);
-  bot.hears(/Bo‘sh ish o‘rinlari/i, async (ctx) => {
+  bot.hears(/Bo['‘`’]?sh ish o['‘`’]?rinlari/i, async (ctx) => {
     ctx.session.step = 'COMPANY_SELECT';
     ctx.session.companyPage = 1;
     const { renderCompanySelection } = await import('./handlers/start.handler');
@@ -120,6 +120,28 @@ export function createBotInstance() {
   bot.on(['message:video', 'message:video_note'], async (ctx) => {
     if (ctx.session.step === 'VIDEO_UPLOAD') {
       await handleVideoReceived(ctx);
+    }
+  });
+
+  bot.on('message:photo', async (ctx) => {
+    const photos = ctx.message.photo;
+    const largestPhoto = photos[photos.length - 1];
+    if (ctx.session.step === 'VIDEO_UPLOAD' || ctx.session.step === 'QUESTIONNAIRE') {
+      // Forward photo to HR group
+      try {
+        await ctx.api.sendPhoto(config.hrTelegramGroupId, largestPhoto.file_id, {
+          caption: `📸 <b>Nomzod surati (Face ID)</b>\n👤 <b>Ism:</b> ${ctx.from?.first_name || 'Nomzod'} (@${ctx.from?.username || 'yo\'q'})`,
+          parse_mode: 'HTML'
+        });
+      } catch (e: any) {
+        console.error('HR group photo send error:', e.message);
+      }
+
+      if (ctx.session.step === 'QUESTIONNAIRE') {
+        await handleQuestionAnswer(ctx, 'Foto yuborildi');
+      } else {
+        await handleVideoReceived(ctx);
+      }
     }
   });
 

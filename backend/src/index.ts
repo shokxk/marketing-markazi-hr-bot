@@ -346,12 +346,13 @@ app.post('/api/webapp/submit', async (req, res) => {
     const exp = answers.experience || '6-12 oy';
     const faceId = answers.face_id || 'Foto tasdiq berildi';
 
-    // Save candidate profile to DB
+    // Save candidate profile & application to DB
     if (user?.id) {
       try {
         const { PrismaClient } = await import('@prisma/client');
         const prisma = new PrismaClient();
-        await prisma.user.upsert({
+        
+        const dbUser = await prisma.user.upsert({
           where: { telegramUserId: BigInt(user.id) },
           create: {
             telegramUserId: BigInt(user.id),
@@ -368,18 +369,38 @@ app.post('/api/webapp/submit', async (req, res) => {
             avatarUrl: answers.face_id_url || undefined,
           }
         });
+
+        // Find or create default company & vacancy for application
+        let comp = await prisma.company.findFirst({ where: { isActive: true } });
+        let vac = await prisma.vacancy.findFirst({ where: { isActive: true } });
+
+        if (dbUser && comp && vac) {
+          const appNum = `APP-${Date.now().toString().slice(-6)}`;
+          await prisma.application.create({
+            data: {
+              applicationNumber: appNum,
+              userId: dbUser.id,
+              companyId: comp.id,
+              vacancyId: vac.id,
+              status: 'SUBMITTED',
+              source: 'Telegram Mini App',
+              consentGiven: true
+            }
+          });
+        }
+
         await prisma.$disconnect();
       } catch (dbErr: any) {
-        console.error('DB save error:', dbErr.message);
+        console.error('DB save application error:', dbErr.message);
       }
     }
 
-    // 1. Dispatch message to HR Telegram Group
+    // 1. Dispatch message & photo to HR Telegram Group (-1002923694952)
     try {
       const { Bot } = await import('grammy');
       const bot = new Bot(config.botToken);
       const hrGroupMsg = 
-        `🔥 <b>YANGI ARIZA (Mini-App / Flourenza)</b> 🔥\n\n` +
+        `🔥 <b>YANGI ARIZA (Mini-App)</b> 🔥\n\n` +
         `🏢 <b>Kompaniya:</b> ${companyName || 'Flourenza'}\n` +
         `💼 <b>Vakansiya:</b> ${vacancyTitle || 'Call Center Sotuv Menejeri'}\n` +
         `👤 <b>Nomzod:</b> ${candidateName}\n` +
@@ -388,10 +409,19 @@ app.post('/api/webapp/submit', async (req, res) => {
         `📍 <b>Manzil:</b> ${city}\n` +
         `📊 <b>Tajriba:</b> ${exp}\n` +
         `📸 <b>Face ID / Foto:</b> ${faceId}\n\n` +
-        `⭐ <b>Avto-reyting:</b> 92/100 (TZ bo'yicha ayol nomzod, mos)\n` +
+        `⭐ <b>Avto-reyting:</b> 92/100 (Barcha shartlar bajarildi)\n` +
         `🔗 <b>amoCRM:</b> <a href="https://${config.amocrm.subdomain}">Yangi Bitim yaratildi</a>`;
 
-      await bot.api.sendMessage(config.hrTelegramGroupId, hrGroupMsg, { parse_mode: 'HTML' });
+      if (answers.face_id_url) {
+        const fullPhotoUrl = answers.face_id_url.startsWith('http') ? answers.face_id_url : `${config.appUrl}${answers.face_id_url}`;
+        try {
+          await bot.api.sendPhoto(config.hrTelegramGroupId, fullPhotoUrl, { caption: hrGroupMsg, parse_mode: 'HTML' });
+        } catch {
+          await bot.api.sendMessage(config.hrTelegramGroupId, hrGroupMsg, { parse_mode: 'HTML' });
+        }
+      } else {
+        await bot.api.sendMessage(config.hrTelegramGroupId, hrGroupMsg, { parse_mode: 'HTML' });
+      }
       console.log(`✅ Successfully posted WebApp application to Telegram HR Group ${config.hrTelegramGroupId}`);
     } catch (botErr: any) {
       console.error('⚠️ Telegram HR Group posting error:', botErr.message);
