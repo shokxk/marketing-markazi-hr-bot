@@ -287,63 +287,63 @@ app.get('/api/admin/candidates', async (req, res) => {
 
     await prisma.$disconnect();
 
-    const candidateMap = new Map<string, any>();
+    const candidatesList: any[] = [];
+    const processedUserIds = new Set<string>();
 
-    // 1. Process applications first (primary source of truth)
+    // 1. Process all applications
     for (const app of applications) {
       const u = app.user;
-      const key = u?.id || app.id;
+      if (u?.id) processedUserIds.add(u.id);
 
-      // Extract answers if user fields are empty
       let nameFromAnswers = '';
       let phoneFromAnswers = '';
       let cityFromAnswers = '';
 
       if (app.answers && Array.isArray(app.answers)) {
         for (const a of app.answers) {
-          if (a.questionId?.includes('FULL_NAME') || a.questionId?.includes('full_name')) nameFromAnswers = a.answerText || '';
-          if (a.questionId?.includes('PHONE') || a.questionId?.includes('phone')) phoneFromAnswers = a.answerText || '';
-          if (a.questionId?.includes('CITY') || a.questionId?.includes('city')) cityFromAnswers = a.answerText || '';
+          const qId = (a.questionId || '').toUpperCase();
+          const txt = a.answerText || '';
+          if (qId.includes('FULL_NAME') || qId.includes('FULLNAME') || qId === '1' || qId === 'Q1') nameFromAnswers = txt;
+          if (qId.includes('PHONE') || qId === '2' || qId === 'Q2') phoneFromAnswers = txt;
+          if (qId.includes('CITY') || qId === '4' || qId === 'Q4') cityFromAnswers = txt;
         }
       }
 
-      if (!candidateMap.has(key)) {
-        candidateMap.set(key, {
-          id: u?.id || app.id,
-          telegramUserId: u?.telegramUserId?.toString() || '',
-          fullName: u?.fullName || nameFromAnswers || 'Ismsiz Nomzod',
-          phone: u?.phone || phoneFromAnswers || 'Ko\'rsatilmadi',
-          city: u?.city || cityFromAnswers || 'Ko\'rsatilmadi',
-          avatarUrl: u?.avatarUrl || null,
-          status: app.status || 'SUBMITTED',
-          vacancyTitle: app.vacancy?.title || 'Call Center Sotuv Menejeri',
-          companyName: app.company?.name || 'Flourenza',
-          createdAt: app.submittedAt || app.createdAt || u?.createdAt || new Date(),
-        });
-      }
+      candidatesList.push({
+        id: u?.id || app.id,
+        applicationId: app.id,
+        telegramUserId: u?.telegramUserId?.toString() || '',
+        fullName: u?.fullName || nameFromAnswers || 'Ismsiz Nomzod',
+        phone: u?.phone || phoneFromAnswers || 'Ko\'rsatilmadi',
+        city: u?.city || cityFromAnswers || 'Ko\'rsatilmadi',
+        avatarUrl: u?.avatarUrl || null,
+        status: app.status || 'SUBMITTED',
+        vacancyTitle: app.vacancy?.title || 'Call Center Sotuv Menejeri',
+        companyName: app.company?.name || 'Flourenza',
+        createdAt: app.submittedAt || app.createdAt || u?.createdAt || new Date(),
+      });
     }
 
     // 2. Process users without applications
     for (const u of users) {
-      if (!candidateMap.has(u.id)) {
-        const latestApp = u.applications?.[0];
-        candidateMap.set(u.id, {
+      if (!processedUserIds.has(u.id)) {
+        candidatesList.push({
           id: u.id,
+          applicationId: null,
           telegramUserId: u.telegramUserId?.toString() || '',
           fullName: u.fullName || 'Ismsiz Nomzod',
           phone: u.phone || 'Ko\'rsatilmadi',
           city: u.city || 'Ko\'rsatilmadi',
           avatarUrl: u.avatarUrl || null,
-          status: latestApp?.status || 'NEW',
-          vacancyTitle: latestApp?.vacancy?.title || 'Call Center Sotuv Menejeri',
-          companyName: latestApp?.company?.name || 'Flourenza',
+          status: 'NEW',
+          vacancyTitle: 'Call Center Sotuv Menejeri',
+          companyName: 'Flourenza',
           createdAt: u.createdAt,
         });
       }
     }
 
-    const candidates = Array.from(candidateMap.values());
-    res.json({ candidates });
+    res.json({ candidates: candidatesList });
   } catch (err: any) {
     console.error('Admin candidates API error:', err.message);
     res.json({ candidates: [] });
