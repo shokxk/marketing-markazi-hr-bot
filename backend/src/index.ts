@@ -38,8 +38,13 @@ const noCache = (_req: any, res: any, next: any) => {
   next();
 };
 
-// Root /app and /app/index.html always serve fresh
-app.get(['/app', '/app/', '/app/index.html'], noCache, (req, res) => {
+// Redirect /app without trailing slash to /app/ so relative browser links resolve correctly
+app.get('/app', (_req, res) => {
+  res.redirect(301, '/app/');
+});
+
+// Root /app/ and /app/index.html always serve fresh
+app.get(['/app/', '/app/index.html'], noCache, (_req, res) => {
   const candidates = [
     path.resolve(process.cwd(), 'public/app/index.html'),
     path.resolve(__dirname, 'public/app/index.html'),
@@ -49,6 +54,19 @@ app.get(['/app', '/app/', '/app/index.html'], noCache, (req, res) => {
     if (fs.existsSync(p)) return res.sendFile(p);
   }
   res.status(404).send('App not found');
+});
+
+// Explicit route for app.js to prevent any path resolution issues
+app.get(['/app/app.js', '/app.js'], (_req, res) => {
+  const candidates = [
+    path.resolve(process.cwd(), 'public/app/app.js'),
+    path.resolve(__dirname, 'public/app/app.js'),
+    path.resolve(__dirname, '../public/app/app.js'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return res.sendFile(p);
+  }
+  res.status(404).send('app.js not found');
 });
 
 // Static assets (js, css, images) — normal caching is fine
