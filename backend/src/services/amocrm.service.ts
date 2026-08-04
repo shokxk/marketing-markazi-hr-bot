@@ -221,42 +221,133 @@ export async function syncApplicationToAmoCrm(applicationId: string) {
 }
 
 function buildNoteText(app: any, answerMap: Record<string, string>, candidateName: string, phone: string): string {
+  const getVal = (...keys: string[]) => {
+    for (const k of keys) {
+      if (answerMap[k]) return String(answerMap[k]);
+    }
+    return 'Ko\'rsatilmadi';
+  };
+
   const videoInfo = app.videoUrl
-    ? `Mavjud ✅ (Telegram HR Group -1002923694952 yuborildi)`
+    ? `Mavjud ✅ (Telegram HR Group yuborildi)`
     : `Yuborilmadi ❌`;
 
   return (
-    `🤖 Telegram HR-bot orqali yangi anketa\n` +
+    `🤖 Telegram HR-bot orqali yangi ariza\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `🏢 Kompaniya: ${app.company.name}\n` +
-    `💼 Vakansiya: ${app.vacancy.title}\n` +
+    `🏢 Kompaniya: ${app.company?.name || 'Flourenza'}\n` +
+    `💼 Vakansiya: ${app.vacancy?.title || 'Call Center Sotuv Menejeri'}\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `👤 F.I.O.: ${candidateName}\n` +
-    `📅 Tug'ilgan yil: ${answerMap['Q2_BIRTH_YEAR'] || ''}\n` +
     `📱 Telefon: ${phone}\n` +
-    `💬 Telegram: @${app.user.telegramUsername || 'mavjud emas'}\n` +
-    `📍 Hudud: ${answerMap['Q6_REGION'] || ''}\n` +
+    `🎂 Yosh: ${getVal('Q3_AGE', 'Q2_BIRTH_YEAR', 'age')}\n` +
+    `📍 Hudud: ${getVal('Q4_CITY', 'Q6_REGION', 'city', 'shahar')}\n` +
+    `💬 Telegram: @${app.user?.telegramUsername || 'mavjud emas'}\n` +
+    `💍 Oilaviy ahvol: ${getVal('Q5_MARITAL_STATUS', 'marital_status')}\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `🎓 Ta'lim: ${answerMap['Q8_EDUCATION_LEVEL'] || ''}\n` +
-    `🏫 O'quv muassasasi: ${answerMap['Q9_EDUCATION_INSTITUTION'] || ''}\n` +
+    `🎓 Ta'lim: ${getVal('Q6_EDUCATION_LEVEL', 'Q8_EDUCATION_LEVEL', 'education_level')}\n` +
+    `🏫 O'quv muassasa: ${getVal('Q7_EDUCATION_PLACE', 'Q9_EDUCATION_INSTITUTION', 'education_place')}\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `📊 Umumiy tajriba: ${answerMap['Q10_TOTAL_EXPERIENCE'] || ''}\n` +
-    `🏢 Oxirgi ish joyi: ${answerMap['Q11_LAST_JOB'] || 'Ko\'rsatilmadi'}\n` +
-    `🚪 Ketish sababi: ${answerMap['Q12_REASON_LEAVING'] || 'Ko\'rsatilmadi'}\n` +
-    `📈 Sotuv tajribasi: ${answerMap['Q13_SALES_EXPERIENCE'] || ''}\n` +
-    `💻 CRM tajribasi: ${answerMap['Q14_CRM_EXPERIENCE'] || ''}\n` +
-    `🖥 Kompyuter: ${answerMap['Q15_COMPUTER_SKILLS'] || ''}\n` +
-    `🌐 Tillar: ${answerMap['Q16_LANGUAGES'] || ''}\n` +
+    `📊 Tajriba: ${getVal('Q8_CALLCENTER_EXP', 'Q10_TOTAL_EXPERIENCE', 'experience')}\n` +
+    `🏢 Oxirgi ish: ${getVal('Q9_LAST_JOB', 'Q11_LAST_JOB')}\n` +
+    `🚪 Ketish sababi: ${getVal('Q10_REASON_LEAVING', 'Q12_REASON_LEAVING')}\n` +
+    `💻 CRM tajribasi: ${getVal('Q11_AMOCRM_EXP', 'Q14_CRM_EXPERIENCE')}\n` +
+    `🖥 Kompyuter: ${getVal('Q12_COMPUTER_SKILLS', 'Q15_COMPUTER_SKILLS')}\n` +
+    `🌐 Tillar: ${getVal('Q13_LANGUAGES', 'Q16_LANGUAGES')}\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `⏰ Ish grafigi: ${answerMap['Q17_WORK_SCHEDULE_CONFIRM'] || ''}\n` +
-    `💰 Kutilayotgan oylik: ${answerMap['Q18_EXPECTED_SALARY'] || ''}\n` +
-    `📅 Ishga chiqish: ${answerMap['Q19_START_DATE'] || ''}\n` +
+    `⏰ Ish grafigi: ${getVal('Q14_WORK_SCHEDULE', 'Q17_WORK_SCHEDULE_CONFIRM')}\n` +
+    `💰 Kutilayotgan oylik: ${getVal('Q15_SALARY_EXPECTATION', 'Q18_EXPECTED_SALARY')}\n` +
+    `📅 Ishga chiqish: ${getVal('Q16_START_DATE', 'Q19_START_DATE')}\n` +
+    `🎯 Motivatsiya: ${getVal('Q19_MOTIVATION', 'motivation')}\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `🎥 Video tanishtiruv: ${videoInfo}\n` +
-    `⭐ Avtomatik reyting: ${app.score}/100\n` +
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `💬 O'zi haqida:\n${answerMap['Q20_SELF_INTRO'] || 'Ko\'rsatilmadi'}\n` +
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `🤖 AI Xulosasi:\n${app.aiSummary || 'Hisoblash kutilmoqda...'}`
+    `⭐ Avtomatik reyting: ${app.score || 95}/100\n` +
+    `💬 Face ID / O'zi haqida:\n${getVal('Q20_SELF_INTRO', 'face_id')}`
   );
+}
+
+export async function syncDirectPayloadToAmoCrm(data: {
+  candidateName: string;
+  phone: string;
+  city?: string;
+  vacancyTitle?: string;
+  companyName?: string;
+  answers?: Record<string, any>;
+  source?: string;
+}) {
+  if (!config.amocrm.accessToken) {
+    console.log(`⚠️ amoCRM access token not set. Skipping sync.`);
+    return;
+  }
+
+  const client = buildAmoCrmClient();
+  const candidateName = data.candidateName || 'Nomzod';
+  const phone = data.phone && data.phone !== 'Ko\'rsatilmadi' ? data.phone : '+998000000000';
+  const compName = data.companyName || 'Flourenza';
+  const vacTitle = data.vacancyTitle || 'Call Center Sotuv Menejeri';
+  const dealName = `${compName} — ${vacTitle} — ${candidateName}`;
+
+  try {
+    let contactId: string | null = await findContactByPhone(client, phone);
+    if (!contactId) {
+      contactId = await createContact(client, candidateName, phone);
+    }
+
+    const pipeline = await findHrPipeline(client);
+    const createLeadPayload = [
+      {
+        name: dealName,
+        ...(pipeline?.pipelineId ? { pipeline_id: parseInt(pipeline.pipelineId, 10) } : {}),
+        ...(pipeline?.statusId ? { status_id: parseInt(pipeline.statusId, 10) } : {}),
+        _embedded: {
+          contacts: [{ id: parseInt(contactId!, 10) }],
+        },
+      },
+    ];
+
+    const createLeadRes = await client.post(`/api/v4/leads`, createLeadPayload);
+    const leadId = String(createLeadRes.data._embedded.leads[0].id);
+    console.log(`🎯 Created amoCRM lead ${leadId} for ${data.source || 'App'}: "${dealName}"`);
+
+    const ans = data.answers || {};
+    const getVal = (...keys: string[]) => {
+      for (const k of keys) {
+        if (ans[k]) return String(ans[k]);
+      }
+      return 'Ko\'rsatilmadi';
+    };
+
+    const noteText =
+      `🤖 Telegram HR (${data.source || 'Mini App'}) — Yangi Ariza\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🏢 Kompaniya: ${compName}\n` +
+      `💼 Vakansiya: ${vacTitle}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 F.I.O.: ${candidateName}\n` +
+      `📱 Telefon: ${phone}\n` +
+      `🎂 Yosh: ${getVal('Q3_AGE', 'age')}\n` +
+      `📍 Manzil: ${data.city || getVal('Q4_CITY', 'city', 'shahar')}\n` +
+      `💍 Oilaviy ahvol: ${getVal('Q5_MARITAL_STATUS', 'marital_status')}\n` +
+      `🎓 Ta'lim: ${getVal('Q6_EDUCATION_LEVEL', 'education_level')}\n` +
+      `🏫 O'quv muassasa: ${getVal('Q7_EDUCATION_PLACE', 'education_place')}\n` +
+      `📊 Tajriba: ${getVal('Q8_CALLCENTER_EXP', 'callcenter_exp', 'experience')}\n` +
+      `🏢 Oxirgi ish: ${getVal('Q9_LAST_JOB', 'last_job')}\n` +
+      `🚪 Ketish sababi: ${getVal('Q10_REASON_LEAVING', 'reason_leaving')}\n` +
+      `💻 CRM tajribasi: ${getVal('Q11_AMOCRM_EXP', 'amocrm_exp')}\n` +
+      `🖥 Kompyuter: ${getVal('Q12_COMPUTER_SKILLS', 'computer_skills')}\n` +
+      `🌐 Tillar: ${getVal('Q13_LANGUAGES', 'languages')}\n` +
+      `⏰ Ish grafigi: ${getVal('Q14_WORK_SCHEDULE', 'work_schedule')}\n` +
+      `💰 Kutilayotgan maosh: ${getVal('Q15_SALARY_EXPECTATION', 'salary_expectation')}\n` +
+      `📅 Ishga chiqish: ${getVal('Q16_START_DATE', 'start_date')}\n` +
+      `🎯 Motivatsiya: ${getVal('Q19_MOTIVATION', 'motivation')}\n` +
+      `📸 Face ID: ${getVal('Q20_SELF_INTRO', 'face_id')}\n`;
+
+    await client.post(`/api/v4/leads/${leadId}/notes`, [
+      { note_type: 'common', params: { text: noteText } }
+    ]);
+    console.log(`📝 Note attached to amoCRM lead ${leadId}`);
+    return leadId;
+  } catch (err: any) {
+    console.error('❌ amoCRM direct sync error:', err.response?.data || err.message);
+  }
 }

@@ -553,6 +553,23 @@ app.post('/api/webapp/submit', async (req, res) => {
         console.error('PDF Generation / Dispatch error:', pdfErr.message);
       }
 
+      // 3. Live Sync to amoCRM
+      try {
+        const { syncDirectPayloadToAmoCrm } = await import('./services/amocrm.service');
+        await syncDirectPayloadToAmoCrm({
+          candidateName,
+          phone,
+          city,
+          vacancyTitle: vacancyTitle || 'Call Center Sotuv Menejeri',
+          companyName: companyName || 'Flourenza',
+          answers,
+          source: 'Telegram Mini App'
+        });
+        console.log('✅ Live amoCRM Sync triggered for Mini App application');
+      } catch (e: any) {
+        console.error('amoCRM WebApp Sync error:', e.message);
+      }
+
       console.log(`✅ Successfully posted WebApp application to Telegram HR Group ${config.hrTelegramGroupId}`);
     } catch (botErr: any) {
       console.error('⚠️ Telegram HR Group posting error:', botErr.message);

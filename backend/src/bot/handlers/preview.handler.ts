@@ -127,6 +127,23 @@ export async function handleAppSubmit(ctx: BotContext) {
       });
       ctx.session.applicationId = app.id;
     }
+
+    // Live Sync to amoCRM
+    try {
+      const { syncDirectPayloadToAmoCrm } = await import('../../services/amocrm.service');
+      await syncDirectPayloadToAmoCrm({
+        candidateName,
+        phone,
+        city,
+        vacancyTitle: vacancyName,
+        companyName: companyName,
+        answers,
+        source: 'Telegram Bot'
+      });
+      console.log('✅ Live amoCRM Sync triggered for Telegram Bot application');
+    } catch (amoErr: any) {
+      console.error('amoCRM Bot Sync error:', amoErr.message);
+    }
   } catch (dbErr: any) {
     console.error('App submit DB error:', dbErr.message);
   }
