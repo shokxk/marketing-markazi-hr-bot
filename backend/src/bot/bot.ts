@@ -83,6 +83,11 @@ export function createBotInstance() {
     await handleCompanyPagination(ctx, page);
   });
 
+  // Noop: silently answer to avoid loading spinner
+  bot.callbackQuery('noop', async (ctx) => {
+    await ctx.answerCallbackQuery();
+  });
+
   bot.callbackQuery('company_search', handleCompanySearchPrompt);
   bot.callbackQuery('company_recommend', handleCompanyRecommendPrompt);
 

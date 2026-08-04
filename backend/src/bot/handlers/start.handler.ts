@@ -109,17 +109,17 @@ export async function renderCompanySelection(ctx: BotContext, page = 1) {
 
   const pageRow = [];
   if (page > 1) {
-    pageRow.push(InlineKeyboard.text(`⬅️ ${t('btn_prev_page', lang)}`, `comp_page:${page - 1}`));
+    pageRow.push(InlineKeyboard.text(`⬅️ ${t('btn_prev_page', lang)}`, `company_page:${page - 1}`));
   }
   pageRow.push(InlineKeyboard.text(`📄 ${page}/${totalPages}`, 'noop'));
   if (page < totalPages) {
-    pageRow.push(InlineKeyboard.text(`➡️ ${t('btn_next_page', lang)}`, `comp_page:${page + 1}`));
+    pageRow.push(InlineKeyboard.text(`➡️ ${t('btn_next_page', lang)}`, `company_page:${page + 1}`));
   }
   keyboard.row(...pageRow);
 
   keyboard.row(
-    InlineKeyboard.text(`🔍 ${t('btn_search_company', lang)}`, 'search_company'),
-    InlineKeyboard.text(`💡 ${t('btn_recommend_me', lang)}`, 'recommend_company')
+    InlineKeyboard.text(`🔍 ${t('btn_search_company', lang)}`, 'company_search'),
+    InlineKeyboard.text(`💡 ${t('btn_recommend_me', lang)}`, 'company_recommend')
   );
 
   if (ctx.callbackQuery) {

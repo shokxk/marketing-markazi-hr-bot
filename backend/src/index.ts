@@ -483,6 +483,46 @@ app.post('/api/webapp/submit', async (req, res) => {
   }
 });
 
+// ── My Applications (for Mini App user) ──
+app.get('/api/webapp/my-applications', async (req, res) => {
+  try {
+    const userId = req.query.userId as string;
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    let applications: any[] = [];
+
+    if (userId) {
+      try {
+        const user = await prisma.user.findFirst({
+          where: { telegramUserId: BigInt(userId) }
+        });
+
+        if (user) {
+          const apps = await prisma.application.findMany({
+            where: { userId: user.id },
+            include: { vacancy: true, company: true },
+            orderBy: { createdAt: 'desc' }
+          });
+          applications = apps.map((a: any) => ({
+            id: a.id,
+            status: a.status,
+            vacancyTitle: a.vacancy?.title || 'Call Center Sotuv Menejeri',
+            companyName: a.company?.name || 'Flourenza',
+            applicationNumber: a.applicationNumber,
+            createdAt: a.createdAt,
+          }));
+        }
+      } catch (e) {}
+    }
+
+    await prisma.$disconnect();
+    res.json({ applications });
+  } catch (err: any) {
+    res.json({ applications: [] });
+  }
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
 });

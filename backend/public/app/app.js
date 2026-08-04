@@ -64,6 +64,23 @@ async function fetchVacancies() {
   }
 }
 
+function filterVacancies(filter) {
+  // Update active chip
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+
+  if (filter === 'all') {
+    renderVacancies(vacancies);
+  } else {
+    const filtered = vacancies.filter(v =>
+      (v.city || '').toLowerCase().includes(filter.toLowerCase()) ||
+      (v.title || '').toLowerCase().includes(filter.toLowerCase()) ||
+      (v.company || '').toLowerCase().includes(filter.toLowerCase())
+    );
+    renderVacancies(filtered);
+  }
+}
+
 function renderVacancies(list) {
   const grid = document.getElementById('vacancyGrid');
   if (!grid) return;
@@ -353,19 +370,56 @@ function closeSuccessModal() {
 async function fetchMyApplications() {
   const container = document.getElementById('applicationsList');
   if (!container) return;
-  container.innerHTML = `
-    <div class="vacancy-card glass" style="margin-bottom:12px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <span style="font-weight:800; font-size:15px;">Call Center Sotuv Menejeri</span>
-        <span class="tag-pill" style="background:rgba(34,197,94,0.1); color:#16A34A;">KORILMOQDA</span>
+
+  container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);"><div style="font-size:32px; margin-bottom:8px;">⏳</div><p>Yuklanmoqda...</p></div>`;
+
+  try {
+    const userId = tg?.initDataUnsafe?.user?.id;
+    const url = userId ? `/api/webapp/my-applications?userId=${userId}` : '/api/webapp/my-applications';
+    const res = await fetch(url);
+    const data = await res.json();
+    const apps = data.applications || [];
+
+    if (!apps.length) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:40px 20px;">
+          <div style="font-size:48px; margin-bottom:12px;">📋</div>
+          <h3 style="font-weight:800; margin-bottom:8px;">Arizalar yo'q</h3>
+          <p style="font-size:13px; color:var(--text-muted);">Hozircha ariza topshirmadingiz. Vakansiyalar bo'limidan boshlang!</p>
+        </div>
+      `;
+      return;
+    }
+
+    const statusMap = {
+      'NEW':       { label: 'Yangi',     color: '#94A3B8', bg: 'rgba(148,163,184,0.1)' },
+      'SUBMITTED': { label: 'Ko\'rilmoqda', color: '#60A5FA', bg: 'rgba(96,165,250,0.1)' },
+      'INVITED':   { label: '✅ Taklif!', color: '#22C55E', bg: 'rgba(34,197,94,0.1)' },
+      'REJECTED':  { label: 'Rad etildi', color: '#EF4444', bg: 'rgba(239,68,68,0.1)' },
+    };
+
+    container.innerHTML = apps.map(app => {
+      const st = statusMap[app.status] || statusMap['SUBMITTED'];
+      return `
+        <div class="vacancy-card" style="margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+            <span style="font-weight:800; font-size:15px;">${app.vacancyTitle || 'Call Center Sotuv Menejeri'}</span>
+            <span class="tag-pill" style="background:${st.bg}; color:${st.color}; border:none;">${st.label}</span>
+          </div>
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">🏢 ${app.companyName || 'Flourenza'}</p>
+          <p style="font-size:11px; color:var(--text-muted);">📅 ${app.createdAt ? new Date(app.createdAt).toLocaleDateString('uz-UZ') : 'Bugun'}</p>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:40px 20px;">
+        <div style="font-size:48px; margin-bottom:12px;">📋</div>
+        <h3 style="font-weight:800; margin-bottom:8px;">Arizalar yo'q</h3>
+        <p style="font-size:13px; color:var(--text-muted);">Hozircha ariza topshirmadingiz.</p>
       </div>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Kompaniya: Flourenza | Ariza raqami: #FL-2026-9812</p>
-      <div style="display:flex; gap:10px; font-size:12px;">
-        <span>✅ amoCRM ga uzatildi</span>
-        <span>✅ HR-Gruppaga yuborildi</span>
-      </div>
-    </div>
-  `;
+    `;
+  }
 }
 
 // ── Animated Tab Switching ──
