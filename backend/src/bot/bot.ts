@@ -60,6 +60,20 @@ export function createBotInstance() {
   bot.command('start', handleStartCommand);
   bot.command('status', handleStatusCheckCommand);
   bot.command('help', handleHelpCommand);
+  bot.command('admin', async (ctx) => {
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || 'https://marketing-markazi-hr-bot.onrender.com';
+    const adminUrl = `${baseUrl}/admin?v=20260804_v11`;
+    const { InlineKeyboard } = await import('grammy');
+    
+    await ctx.reply(
+      `🔐 <b>Marketing Markazi — Admin Panel</b>\n\n` +
+      `Ushbu bo'lim faqat rahbarlar va HR xodimlar uchun mo'ljallangan.`,
+      {
+        parse_mode: 'HTML',
+        reply_markup: new InlineKeyboard().webApp('⚙️ Admin Panelni ochish', adminUrl)
+      }
+    );
+  });
 
   // Hears listeners for bottom main menu buttons (flexible apostrophes)
   bot.hears(/Anketani boshlash/i, handleStartAnketa);

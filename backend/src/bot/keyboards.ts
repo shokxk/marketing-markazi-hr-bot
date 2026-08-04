@@ -4,7 +4,6 @@ import { t } from '../locales/i18n';
 export function getMainMenuKeyboard(lang = 'uz') {
   const baseUrl = process.env.RENDER_EXTERNAL_URL || 'https://marketing-markazi-hr-bot.onrender.com';
   const webAppUrl = `${baseUrl}/app?v=20260804_v11`;
-  const adminUrl = `${baseUrl}/admin?v=20260804_v11`;
   return new Keyboard()
     .webApp('📱 Mini App (Vakansiyalar & HR UI)', webAppUrl)
     .row()
@@ -12,7 +11,6 @@ export function getMainMenuKeyboard(lang = 'uz') {
     .text(t('btn_vacancies', lang))
     .row()
     .text(t('btn_status', lang))
-    .webApp('⚙️ Admin Panel', adminUrl)
     .resized();
 }
 
