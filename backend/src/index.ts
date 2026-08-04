@@ -38,13 +38,8 @@ const noCache = (_req: any, res: any, next: any) => {
   next();
 };
 
-// Redirect /app without trailing slash to /app/ so relative browser links resolve correctly
-app.get('/app', (_req, res) => {
-  res.redirect(301, '/app/');
-});
-
-// Root /app/ and /app/index.html always serve fresh
-app.get(['/app/', '/app/index.html'], noCache, (_req, res) => {
+// Root /app, /app/ and /app/index.html always serve fresh
+app.get(['/app', '/app/', '/app/index.html'], noCache, (_req, res) => {
   const candidates = [
     path.resolve(process.cwd(), 'public/app/index.html'),
     path.resolve(__dirname, 'public/app/index.html'),
@@ -723,7 +718,8 @@ async function startBotWithRetry() {
       const bot = createBotInstance();
 
       // Automatically configure Telegram Chat Menu Button to open Mini App
-      const webAppUrl = process.env.RENDER_EXTERNAL_URL ? `${process.env.RENDER_EXTERNAL_URL}/app` : 'https://marketing-markazi-hr-bot.onrender.com/app';
+      const baseUrl = process.env.RENDER_EXTERNAL_URL || 'https://marketing-markazi-hr-bot.onrender.com';
+      const webAppUrl = `${baseUrl}/app?v=20260804_v11`;
       try {
         await bot.api.setChatMenuButton({
           menu_button: {
