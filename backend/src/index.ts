@@ -722,25 +722,28 @@ async function autoSeed() {
   }
 }
 
-// Instantiate Telegram Bot for Webhook & Long Polling
-const globalBot = createBotInstance();
-
-// Webhook endpoint for Telegram updates (Wakes up Render instantly on incoming messages)
-import { webhookCallback } from 'grammy';
-app.use('/api/telegram-webhook', express.json(), webhookCallback(globalBot, 'express'));
-
-// Auto-reconnecting Telegram Bot launcher (Webhook in production, Long Polling in local)
+// Bulletproof Auto-reconnecting Telegram Bot launcher
 async function startBotEngine() {
   if (process.env.NODE_ENV === 'test' || !config.botToken || config.botToken === 'MOCK_BOT_TOKEN_123456') {
     console.log('ℹ️ Running with mock/dummy Telegram bot token.');
     return;
   }
 
+  const bot = createBotInstance();
+
+  // 1. Delete any existing webhook to ensure clean long-polling
+  try {
+    await bot.api.deleteWebhook({ drop_pending_updates: false });
+    console.log('🧹 Cleared legacy Telegram webhook for clean long-polling');
+  } catch (whErr: any) {
+    console.log('Webhook cleanup info:', whErr.message);
+  }
+
+  // 2. Automatically configure Telegram Chat Menu Button to open Mini App
   const baseUrl = process.env.RENDER_EXTERNAL_URL || 'https://marketing-markazi-hr-bot.onrender.com';
   const webAppUrl = `${baseUrl}/app?v=20260804_v11`;
-
   try {
-    await globalBot.api.setChatMenuButton({
+    await bot.api.setChatMenuButton({
       menu_button: {
         type: 'web_app',
         text: '📱 Mini App',
@@ -752,25 +755,19 @@ async function startBotEngine() {
     console.log('📱 Menu button setup info:', menuErr.message);
   }
 
-  if (process.env.NODE_ENV === 'production' || process.env.RENDER_EXTERNAL_URL) {
-    const webhookUrl = `${baseUrl}/api/telegram-webhook`;
+  // 3. Retry loop for long-polling (handles 409 Conflict during Render container rolling restarts)
+  while (true) {
     try {
-      await globalBot.api.setWebhook(webhookUrl, { drop_pending_updates: false });
-      console.log(`🌐 Telegram Webhook registered successfully at: ${webhookUrl}`);
-    } catch (whErr: any) {
-      console.error('⚠️ Telegram Webhook setup error:', whErr.message);
-    }
-  } else {
-    // Local dev fallback to long-polling
-    try {
-      await globalBot.api.deleteWebhook({ drop_pending_updates: false });
-      globalBot.start({
+      console.log('🤖 Starting Telegram Bot long-polling connection...');
+      await bot.start({
         onStart: (info) => {
-          console.log(`🤖 Local Telegram Bot @${info.username} started via long-polling`);
+          console.log(`🤖 Telegram Bot @${info.username} started successfully & active 24/7!`);
         },
       });
-    } catch (lpErr: any) {
-      console.error('⚠️ Long-polling start error:', lpErr.message);
+      break;
+    } catch (err: any) {
+      console.error('⚠️ Telegram Bot start retry (waiting 5s for old container stop):', err.message);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   }
 }
