@@ -14,22 +14,26 @@ export async function handleStartCommand(ctx: BotContext) {
 
   if (!telegramUserId) return;
 
-  const fullName = [ctx.from?.first_name, ctx.from?.last_name].filter(Boolean).join(' ');
+  const fullName = [ctx.from?.first_name, ctx.from?.last_name].filter(Boolean).join(' ') || 'Foydalanuvchi';
 
-  // Upsert user in database
-  await prisma.user.upsert({
-    where: { telegramUserId: BigInt(telegramUserId) },
-    update: {
-      fullName,
-      telegramUsername: ctx.from?.username || null,
-    },
-    create: {
-      telegramUserId: BigInt(telegramUserId),
-      fullName,
-      telegramUsername: ctx.from?.username || null,
-      language: lang,
-    },
-  });
+  // Upsert user in database safely
+  try {
+    await prisma.user.upsert({
+      where: { telegramUserId: BigInt(telegramUserId) },
+      update: {
+        fullName,
+        telegramUsername: ctx.from?.username || null,
+      },
+      create: {
+        telegramUserId: BigInt(telegramUserId),
+        fullName,
+        telegramUsername: ctx.from?.username || null,
+        language: lang,
+      },
+    });
+  } catch (dbErr: any) {
+    console.error('⚠️ User upsert error in handleStartCommand (non-blocking):', dbErr.message);
+  }
 
   ctx.session.step = 'IDLE';
 
@@ -41,11 +45,16 @@ export async function handleStartCommand(ctx: BotContext) {
       parse_mode: 'HTML',
       reply_markup: getMainMenuKeyboard(lang),
     });
-  } catch {
-    await ctx.reply(welcomeCaption, {
-      parse_mode: 'HTML',
-      reply_markup: getMainMenuKeyboard(lang),
-    });
+  } catch (photoErr: any) {
+    console.log('⚠️ Photo reply failed, sending text fallback:', photoErr.message);
+    try {
+      await ctx.reply(welcomeCaption, {
+        parse_mode: 'HTML',
+        reply_markup: getMainMenuKeyboard(lang),
+      });
+    } catch (txtErr: any) {
+      console.error('❌ Failed to send text fallback start message:', txtErr.message);
+    }
   }
 }
 
