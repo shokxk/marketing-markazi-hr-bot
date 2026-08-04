@@ -77,7 +77,28 @@ export async function handleAppSubmit(ctx: BotContext) {
   const appId = ctx.session.applicationId;
 
   try {
-    // If we have an applicationId, update it
+    const telegramUserId = BigInt(ctx.from?.id || 0);
+    const dbUser = await prisma.user.upsert({
+      where: { telegramUserId },
+      create: {
+        telegramUserId,
+        telegramUsername: ctx.from?.username || null,
+        fullName: candidateName,
+        phone: phone !== 'Ko\'rsatilmadi' ? phone : null,
+        city: city !== 'Ko\'rsatilmadi' ? city : null,
+        language: ctx.session.lang || 'uz',
+      },
+      update: {
+        fullName: candidateName,
+        phone: phone !== 'Ko\'rsatilmadi' ? phone : undefined,
+        city: city !== 'Ko\'rsatilmadi' ? city : undefined,
+        telegramUsername: ctx.from?.username || undefined,
+      }
+    });
+
+    let comp = await prisma.company.findFirst({ where: { isActive: true } });
+    let vac = await prisma.vacancy.findFirst({ where: { isActive: true } });
+
     if (appId) {
       const updatedApp = await prisma.application.update({
         where: { id: appId },
@@ -85,46 +106,26 @@ export async function handleAppSubmit(ctx: BotContext) {
           status: 'SUBMITTED',
           completionPercent: 100,
           submittedAt: new Date(),
+          userId: dbUser.id,
         },
         include: { company: true, vacancy: true },
       });
       appNumber = updatedApp.applicationNumber;
-    } else {
-      // No applicationId — save directly from session answers
-      const telegramUserId = BigInt(ctx.from?.id || 0);
-      let user = await prisma.user.findFirst({ where: { telegramUserId } });
-      if (!user) {
-        user = await prisma.user.create({
-          data: {
-            telegramUserId,
-            fullName: candidateName,
-            phone: phone !== 'Ko\'rsatilmadi' ? phone : null,
-            city: city !== 'Ko\'rsatilmadi' ? city : null,
-            telegramUsername: ctx.from?.username || null,
-            language: ctx.session.lang || 'uz',
-          }
-        });
-      }
-
-      const comp = await prisma.company.findFirst({ where: { isActive: true } });
-      const vac = await prisma.vacancy.findFirst({ where: { isActive: true } });
-
-      if (comp && vac) {
-        const app = await prisma.application.create({
-          data: {
-            applicationNumber: appNumber,
-            userId: user.id,
-            companyId: comp.id,
-            vacancyId: vac.id,
-            status: 'SUBMITTED',
-            completionPercent: 100,
-            submittedAt: new Date(),
-            source: 'Telegram Bot',
-            consentGiven: true,
-          }
-        });
-        ctx.session.applicationId = app.id;
-      }
+    } else if (comp && vac) {
+      const app = await prisma.application.create({
+        data: {
+          applicationNumber: appNumber,
+          userId: dbUser.id,
+          companyId: comp.id,
+          vacancyId: vac.id,
+          status: 'SUBMITTED',
+          completionPercent: 100,
+          submittedAt: new Date(),
+          source: 'Telegram Bot',
+          consentGiven: true,
+        }
+      });
+      ctx.session.applicationId = app.id;
     }
   } catch (dbErr: any) {
     console.error('App submit DB error:', dbErr.message);

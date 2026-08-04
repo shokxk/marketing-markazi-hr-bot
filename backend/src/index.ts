@@ -226,37 +226,84 @@ app.get('/api/admin/candidates', async (req, res) => {
   try {
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
-    const users = await prisma.user.findMany({
-      include: {
-        applications: {
-          include: { vacancy: true },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+
+    const [users, applications] = await Promise.all([
+      prisma.user.findMany({
+        include: {
+          applications: {
+            include: { vacancy: true, company: true, answers: true },
+            orderBy: { createdAt: 'desc' },
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.application.findMany({
+        include: { user: true, vacancy: true, company: true, answers: true },
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
+
     await prisma.$disconnect();
 
-    const candidates = users.map((u: any) => {
-      const latestApp = u.applications?.[0];
-      return {
-        id: u.id,
-        telegramUserId: u.telegramUserId?.toString(),
-        fullName: u.fullName || 'Ismsiz',
-        phone: u.phone,
-        city: u.city,
-        avatarUrl: u.avatarUrl,
-        bio: u.bio,
-        skills: u.skills,
-        status: latestApp?.status || 'NEW',
-        vacancyTitle: latestApp?.vacancy?.title || 'Call Center Sotuv Menejeri',
-        createdAt: u.createdAt,
-      };
-    });
+    const candidateMap = new Map<string, any>();
 
+    // 1. Process applications first (primary source of truth)
+    for (const app of applications) {
+      const u = app.user;
+      const key = u?.id || app.id;
+
+      // Extract answers if user fields are empty
+      let nameFromAnswers = '';
+      let phoneFromAnswers = '';
+      let cityFromAnswers = '';
+
+      if (app.answers && Array.isArray(app.answers)) {
+        for (const a of app.answers) {
+          if (a.questionId?.includes('FULL_NAME') || a.questionId?.includes('full_name')) nameFromAnswers = a.answerText || '';
+          if (a.questionId?.includes('PHONE') || a.questionId?.includes('phone')) phoneFromAnswers = a.answerText || '';
+          if (a.questionId?.includes('CITY') || a.questionId?.includes('city')) cityFromAnswers = a.answerText || '';
+        }
+      }
+
+      if (!candidateMap.has(key)) {
+        candidateMap.set(key, {
+          id: u?.id || app.id,
+          telegramUserId: u?.telegramUserId?.toString() || '',
+          fullName: u?.fullName || nameFromAnswers || 'Ismsiz Nomzod',
+          phone: u?.phone || phoneFromAnswers || 'Ko\'rsatilmadi',
+          city: u?.city || cityFromAnswers || 'Ko\'rsatilmadi',
+          avatarUrl: u?.avatarUrl || null,
+          status: app.status || 'SUBMITTED',
+          vacancyTitle: app.vacancy?.title || 'Call Center Sotuv Menejeri',
+          companyName: app.company?.name || 'Flourenza',
+          createdAt: app.submittedAt || app.createdAt || u?.createdAt || new Date(),
+        });
+      }
+    }
+
+    // 2. Process users without applications
+    for (const u of users) {
+      if (!candidateMap.has(u.id)) {
+        const latestApp = u.applications?.[0];
+        candidateMap.set(u.id, {
+          id: u.id,
+          telegramUserId: u.telegramUserId?.toString() || '',
+          fullName: u.fullName || 'Ismsiz Nomzod',
+          phone: u.phone || 'Ko\'rsatilmadi',
+          city: u.city || 'Ko\'rsatilmadi',
+          avatarUrl: u.avatarUrl || null,
+          status: latestApp?.status || 'NEW',
+          vacancyTitle: latestApp?.vacancy?.title || 'Call Center Sotuv Menejeri',
+          companyName: latestApp?.company?.name || 'Flourenza',
+          createdAt: u.createdAt,
+        });
+      }
+    }
+
+    const candidates = Array.from(candidateMap.values());
     res.json({ candidates });
   } catch (err: any) {
+    console.error('Admin candidates API error:', err.message);
     res.json({ candidates: [] });
   }
 });
