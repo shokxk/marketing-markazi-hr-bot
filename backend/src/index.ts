@@ -51,17 +51,20 @@ app.get('/admin', (req, res) => {
   res.status(404).send('Admin panel file not found');
 });
 
-// Self Keep-Alive Pinger (Pings every 3.5 minutes — 100% prevents Render from sleeping)
+// Self Keep-Alive Pinger (Pings every 1.5 minutes — 100% prevents Render from sleeping)
 const RENDER_APP_URL = process.env.RENDER_EXTERNAL_URL || 'https://marketing-markazi-hr-bot.onrender.com';
 setInterval(async () => {
   try {
     const axios = (await import('axios')).default;
-    await axios.get(`${RENDER_APP_URL}/health`, { timeout: 8000 });
-    console.log(`⏰ Keep-alive ping sent to ${RENDER_APP_URL}/health — Server active 24/7/365`);
+    await Promise.all([
+      axios.get(`${RENDER_APP_URL}/health`, { timeout: 8000 }),
+      axios.get(`${RENDER_APP_URL}/app`, { timeout: 8000 })
+    ]);
+    console.log(`⏰ Keep-alive ping sent to ${RENDER_APP_URL} — Server active 24/7/365`);
   } catch (err: any) {
     // Non-blocking catch
   }
-}, 3.5 * 60 * 1000);
+}, 1.5 * 60 * 1000);
 
 // Root redirect to Mini App
 app.get('/', (req, res) => {
