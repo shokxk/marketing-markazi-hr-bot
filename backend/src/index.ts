@@ -130,6 +130,11 @@ app.post('/api/admin/vacancies/create', async (req, res) => {
       comp = await prisma.company.create({
         data: { name: companyName, logoUrl: logoUrl || null, city: location, isActive: true }
       });
+    } else if (logoUrl) {
+      await prisma.company.update({
+        where: { id: comp.id },
+        data: { logoUrl, city: location || comp.city }
+      });
     }
 
     const vacancy = await prisma.vacancy.create({
