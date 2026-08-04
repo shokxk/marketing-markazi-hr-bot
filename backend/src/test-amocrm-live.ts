@@ -3,12 +3,13 @@ import { config } from './config';
 
 async function testAmoCrmNewToken() {
   console.log('🧪 Testing NEW amoCRM Long-Term Access Token...');
-  console.log(`🔗 Target URL: https://${config.amocrm.subdomain}`);
+  const fullDomain = config.amocrm.subdomain.includes('amocrm.ru') ? config.amocrm.subdomain : `${config.amocrm.subdomain}.amocrm.ru`;
+  console.log(`🔗 Target URL: https://${fullDomain}`);
   console.log(`📋 Pipeline ID: ${config.amocrm.pipelineId}`);
   console.log(`🔑 Access Token (first 30 chars): ${config.amocrm.accessToken.slice(0, 30)}...`);
 
   const client = axios.create({
-    baseURL: `https://${config.amocrm.subdomain}`,
+    baseURL: `https://${fullDomain}`,
     headers: {
       Authorization: `Bearer ${config.amocrm.accessToken}`,
       'Content-Type': 'application/json',
@@ -57,7 +58,7 @@ async function testAmoCrmNewToken() {
     // 4. Create Lead in Pipeline 10505546
     console.log(`\n--- 4. Creating Lead in Pipeline ${config.amocrm.pipelineId} ---`);
     const targetPipeline = pipelines.find((p: any) => String(p.id) === String(config.amocrm.pipelineId)) || pipelines[0];
-    const initialStatus = targetPipeline._embedded?.statuses[0];
+    const initialStatus = targetPipeline._embedded?.statuses.find((s: any) => s.id !== 142 && s.id !== 143 && !s.name.toLowerCase().includes('неразобранное')) || targetPipeline._embedded?.statuses[1];
 
     const leadPayload = [
       {
@@ -97,7 +98,7 @@ async function testAmoCrmNewToken() {
 
     console.log('\n🎉 ALL AMOCRM LIVE API TESTS PASSED 100% PERFECTLY!');
   } catch (error: any) {
-    console.error('❌ amoCRM API Error:', error.response?.data || error.message);
+    console.error('❌ amoCRM API Error:', JSON.stringify(error.response?.data, null, 2) || error.message);
   }
 }
 

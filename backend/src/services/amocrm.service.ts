@@ -79,11 +79,12 @@ async function findHrPipeline(client: AxiosInstance): Promise<{ pipelineId: stri
     if (config.amocrm.pipelineId) {
       const match = pipelines.find((p: any) => String(p.id) === String(config.amocrm.pipelineId));
       if (match) {
-        const firstStatus = match._embedded?.statuses[0];
-        if (firstStatus) {
+        const statuses = match._embedded?.statuses || [];
+        const validStatus = statuses.find((s: any) => s.id !== 142 && s.id !== 143 && !s.name.toLowerCase().includes('неразобранное')) || statuses[1] || statuses[0];
+        if (validStatus) {
           return {
             pipelineId: String(match.id),
-            statusId: String(firstStatus.id),
+            statusId: String(validStatus.id),
           };
         }
       }
