@@ -722,43 +722,55 @@ async function autoSeed() {
   }
 }
 
-// Auto-reconnecting Telegram Bot launcher
-async function startBotWithRetry() {
+// Instantiate Telegram Bot for Webhook & Long Polling
+const globalBot = createBotInstance();
+
+// Webhook endpoint for Telegram updates (Wakes up Render instantly on incoming messages)
+import { webhookCallback } from 'grammy';
+app.use('/api/telegram-webhook', express.json(), webhookCallback(globalBot, 'express'));
+
+// Auto-reconnecting Telegram Bot launcher (Webhook in production, Long Polling in local)
+async function startBotEngine() {
   if (process.env.NODE_ENV === 'test' || !config.botToken || config.botToken === 'MOCK_BOT_TOKEN_123456') {
     console.log('ℹ️ Running with mock/dummy Telegram bot token.');
     return;
   }
 
-  while (true) {
-    try {
-      console.log('🤖 Initializing Telegram Bot engine...');
-      const bot = createBotInstance();
+  const baseUrl = process.env.RENDER_EXTERNAL_URL || 'https://marketing-markazi-hr-bot.onrender.com';
+  const webAppUrl = `${baseUrl}/app?v=20260804_v11`;
 
-      // Automatically configure Telegram Chat Menu Button to open Mini App
-      const baseUrl = process.env.RENDER_EXTERNAL_URL || 'https://marketing-markazi-hr-bot.onrender.com';
-      const webAppUrl = `${baseUrl}/app?v=20260804_v11`;
-      try {
-        await bot.api.setChatMenuButton({
-          menu_button: {
-            type: 'web_app',
-            text: '📱 Mini App',
-            web_app: { url: webAppUrl }
-          }
-        });
-        console.log(`📱 Telegram Chat Menu Button set to ${webAppUrl}`);
-      } catch (menuErr: any) {
-        console.log('📱 Menu button setup info:', menuErr.message);
+  try {
+    await globalBot.api.setChatMenuButton({
+      menu_button: {
+        type: 'web_app',
+        text: '📱 Mini App',
+        web_app: { url: webAppUrl }
       }
+    });
+    console.log(`📱 Telegram Chat Menu Button set to ${webAppUrl}`);
+  } catch (menuErr: any) {
+    console.log('📱 Menu button setup info:', menuErr.message);
+  }
 
-      await bot.start({
+  if (process.env.NODE_ENV === 'production' || process.env.RENDER_EXTERNAL_URL) {
+    const webhookUrl = `${baseUrl}/api/telegram-webhook`;
+    try {
+      await globalBot.api.setWebhook(webhookUrl, { drop_pending_updates: false });
+      console.log(`🌐 Telegram Webhook registered successfully at: ${webhookUrl}`);
+    } catch (whErr: any) {
+      console.error('⚠️ Telegram Webhook setup error:', whErr.message);
+    }
+  } else {
+    // Local dev fallback to long-polling
+    try {
+      await globalBot.api.deleteWebhook({ drop_pending_updates: false });
+      globalBot.start({
         onStart: (info) => {
-          console.log(`🤖 Telegram Bot @${info.username} started successfully & active 24/7!`);
+          console.log(`🤖 Local Telegram Bot @${info.username} started via long-polling`);
         },
       });
-      break;
-    } catch (err: any) {
-      console.error('⚠️ Telegram Bot start error (retrying in 10s):', err.message);
-      await new Promise((resolve) => setTimeout(resolve, 10000));
+    } catch (lpErr: any) {
+      console.error('⚠️ Long-polling start error:', lpErr.message);
     }
   }
 }
@@ -767,5 +779,5 @@ async function startBotWithRetry() {
 app.listen(config.port, async () => {
   console.log(`🚀 Marketing Markazi HR Backend API running on port ${config.port}`);
   autoSeed().catch(e => console.error('Auto-seed error:', e.message));
-  startBotWithRetry().catch(e => console.error('Bot launch loop error:', e.message));
+  startBotEngine().catch(e => console.error('Bot launch error:', e.message));
 });
