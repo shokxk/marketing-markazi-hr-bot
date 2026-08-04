@@ -130,11 +130,40 @@ export async function handleAppSubmit(ctx: BotContext) {
     console.error('App submit DB error:', dbErr.message);
   }
 
-  // Send to HR Telegram Group
+  // Question Code to Uzbek Label Translator
+  const QUESTION_LABELS: Record<string, string> = {
+    Q1_FULL_NAME: 'To\'liq ism (F.I.Sh.)',
+    Q2_PHONE: 'Telefon raqam',
+    Q3_AGE: 'Yosh',
+    Q4_CITY: 'Yashash shahri',
+    Q5_MARITAL_STATUS: 'Oilaviy ahvoli',
+    Q6_EDUCATION_LEVEL: 'Ma\'lumoti darajasi',
+    Q7_EDUCATION_PLACE: 'O\'quv muassasasi',
+    Q8_CALLCENTER_EXP: 'Call Center / Sotuv tajribasi',
+    Q9_LAST_JOB: 'Oxirgi ish joyi va lavozimi',
+    Q10_REASON_LEAVING: 'Ishdan ketish sababi',
+    Q11_AMOCRM_EXP: 'amoCRM va kompyuter tajribasi',
+    Q12_COMPUTER_SKILLS: 'Kompyuter dasturlari',
+    Q13_LANGUAGES: 'Biladigan tillari',
+    Q14_WORK_SCHEDULE: 'Ish grafigiga tayyorlik',
+    Q15_SALARY_EXPECTATION: 'Kutilayotgan maosh',
+    Q16_START_DATE: 'Ish boshlash vaqti',
+    Q17_SALES_CASE: 'Sotuv keysi ("Qimmat" e\'tiroz)',
+    Q18_SOFT_SKILLS: 'Kuchli 3 ta sifatlari',
+    Q19_MOTIVATION: 'Nega ushbu kompaniya',
+    Q20_SELF_INTRO: 'Face ID / Foto status'
+  };
+
+  // Send to HR Telegram Group (Message + PDF Resume)
   try {
     const { config } = await import('../../config');
-    const { Bot } = await import('grammy');
+    const { Bot, InputFile } = await import('grammy');
     const bot = new Bot(config.botToken);
+
+    const formattedAnswersText = Object.entries(answers)
+      .filter(([k]) => k !== 'telegram_id' && k !== 'username' && k !== 'face_id_url')
+      .map(([k, v]) => `  • <b>${QUESTION_LABELS[k] || k}:</b> ${v}`)
+      .join('\n');
 
     const hrMsg =
       `🔥 <b>YANGI ARIZA (Telegram Bot)</b> 🔥\n\n` +
@@ -143,11 +172,37 @@ export async function handleAppSubmit(ctx: BotContext) {
       `👤 <b>Nomzod:</b> ${candidateName}\n` +
       `📞 <b>Telefon:</b> <code>${phone}</code>\n` +
       `📍 <b>Shahar:</b> ${city}\n` +
-      `🆔 <b>Ariza №:</b> ${appNumber}\n` +
+      `🆔 <b>Ariza №:</b> ${appNumber}\n\n` +
       `📊 <b>Barcha javoblar:</b>\n` +
-      Object.entries(answers).map(([k, v]) => `  • ${k}: ${v}`).join('\n');
+      formattedAnswersText;
 
     await bot.api.sendMessage(config.hrTelegramGroupId, hrMsg, { parse_mode: 'HTML' });
+
+    // Generate & Send PDF Resume Document to HR Group
+    try {
+      const { generateCandidatePdfResume } = await import('../../services/pdf-resume.service');
+      const fs = await import('fs');
+
+      const pdfPath = await generateCandidatePdfResume({
+        candidateName,
+        phone,
+        age: answers['Q3_AGE'] || '',
+        city,
+        companyName,
+        vacancyTitle: vacancyName,
+        answers,
+      });
+
+      if (fs.existsSync(pdfPath)) {
+        await bot.api.sendDocument(config.hrTelegramGroupId, new InputFile(pdfPath), {
+          caption: `📄 <b>NOMZOD REZYUMESI (PDF)</b> — ${candidateName}\n🏢 ${companyName} | 💼 ${vacancyName}`,
+          parse_mode: 'HTML'
+        });
+        console.log('✅ Generated & Sent Telegram Bot candidate PDF resume to HR Group!');
+      }
+    } catch (pdfErr: any) {
+      console.error('Bot PDF generation/send error:', pdfErr.message);
+    }
   } catch (tgErr: any) {
     console.error('HR group notify error:', tgErr.message);
   }

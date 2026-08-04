@@ -73,7 +73,7 @@ export async function generateCandidatePdfResume(data: ResumeData): Promise<stri
 
       currentY += 30;
 
-      // Map question codes to human readableUz texts
+      // Map question codes to human readable Uz texts
       const questionLabels: Record<string, string> = {
         full_name: '1. To\'liq ismingiz',
         phone: '2. Telefon raqamingiz',
@@ -94,7 +94,28 @@ export async function generateCandidatePdfResume(data: ResumeData): Promise<stri
         sales_case: '17. Sotuv keysi ("Qimmat" e\'tiroz)',
         soft_skills: '18. Kuchli 3 ta sifatlar',
         motivation: '19. Nega ushbu kompaniya',
-        face_id: '20. Face ID status'
+        face_id: '20. Face ID status',
+        // Telegram Bot Question Codes:
+        Q1_FULL_NAME: '1. To\'liq ismingiz',
+        Q2_PHONE: '2. Telefon raqamingiz',
+        Q3_AGE: '3. Yoshingiz',
+        Q4_CITY: '4. Yashash shahringiz',
+        Q5_MARITAL_STATUS: '5. Oilaviy ahvolingiz',
+        Q6_EDUCATION_LEVEL: '6. Ma\'lumotingiz darajasi',
+        Q7_EDUCATION_PLACE: '7. O\'quv muassasangiz',
+        Q8_CALLCENTER_EXP: '8. Call Center / Sotuv tajribangiz',
+        Q9_LAST_JOB: '9. Oxirgi ish joyingiz',
+        Q10_REASON_LEAVING: '10. Ishdan ketish sababi',
+        Q11_AMOCRM_EXP: '11. amoCRM tajribangiz',
+        Q12_COMPUTER_SKILLS: '12. Kompyuter dasturlari',
+        Q13_LANGUAGES: '13. Biladigan tillaringiz',
+        Q14_WORK_SCHEDULE: '14. Ish grafigiga tayyorlik',
+        Q15_SALARY_EXPECTATION: '15. Kutilayotgan maosh',
+        Q16_START_DATE: '16. Qachondan ishni boshlaysiz',
+        Q17_SALES_CASE: '17. Sotuv keysi ("Qimmat" e\'tiroz)',
+        Q18_SOFT_SKILLS: '18. Kuchli 3 ta sifatlar',
+        Q19_MOTIVATION: '19. Nega ushbu kompaniya',
+        Q20_SELF_INTRO: '20. Face ID / Rasm'
       };
 
       let itemIndex = 1;
