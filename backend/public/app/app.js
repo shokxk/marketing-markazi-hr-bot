@@ -31,7 +31,7 @@ const standardQuestions = [
   { id: '16', code: 'start_date', text: '16. Qachondan ishni boshlashingiz mumkin?', type: 'TEXT', placeholder: 'Masalan: Ertaga yoki 3 kundan keyin' },
   { id: '17', code: 'sales_case', text: '17. E\'tirozlar bilan ishlash: Mijoz "Qimmat" desa nima degan bo\'lardingiz?', type: 'TEXT', placeholder: 'Qisqacha javobingiz...' },
   { id: '18', code: 'soft_skills', text: '18. O\'zingizdagi eng kuchli 3 ta sifatni ko\'rsating', type: 'TEXT', placeholder: 'Masalan: Intizom, Muloqot, Stressga chidamlilik' },
-  { id: '19', code: 'motivation', text: '19. Nega aynan ushbu kompaniya jamoasida ishlamoqchisiz?', type: 'TEXT', placeholder: 'Sababini yozing...' },
+  { id: '19', code: 'motivation', text: '19. Nega aynan bizning jamoada ishlamoqchisiz?', type: 'TEXT', placeholder: 'Sababini yozing...' },
   { id: '20', code: 'face_id', text: '20. 📸 Face ID / Foto tasdiqlash: O\'zingizning aniq tushgan suratingizni yuboring', type: 'FACE_ID' }
 ];
 
@@ -173,12 +173,8 @@ function renderCurrentQuestion() {
   if (step) step.textContent = `Bosqich ${currentStepIndex + 1}/${standardQuestions.length}`;
   if (perc) perc.textContent = `${percent}%`;
   
-  // Dynamic question text for Question 19 (Company Name)
-  if (q.code === 'motivation') {
-    if (qText) qText.textContent = `19. Nega aynan ${currentVacancy?.company || 'ushbu kompaniya'} jamoasida ishlamoqchisiz?`;
-  } else {
-    if (qText) qText.textContent = q.text;
-  }
+  // Question 19 Text
+  if (qText) qText.textContent = q.text;
 
   const wrapper = document.getElementById('questionInputWrapper');
   if (!wrapper) return;
