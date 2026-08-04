@@ -30,7 +30,28 @@ app.use(express.urlencoded({ extended: true }));
 // Static directory for uploaded candidate videos
 app.use('/uploads', express.static(path.resolve(process.cwd(), config.storage.localDir)));
 
-// Serve Telegram Mini App (Web App) with multiple fallback paths
+// Serve Telegram Mini App — force no-cache on index.html so Telegram WebView always reloads
+const noCache = (_req: any, res: any, next: any) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+};
+
+// Root /app and /app/index.html always serve fresh
+app.get(['/app', '/app/', '/app/index.html'], noCache, (req, res) => {
+  const candidates = [
+    path.resolve(process.cwd(), 'public/app/index.html'),
+    path.resolve(__dirname, 'public/app/index.html'),
+    path.resolve(__dirname, '../public/app/index.html'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return res.sendFile(p);
+  }
+  res.status(404).send('App not found');
+});
+
+// Static assets (js, css, images) — normal caching is fine
 app.use('/app', express.static(path.resolve(process.cwd(), 'public/app')));
 app.use('/app', express.static(path.resolve(__dirname, 'public/app')));
 app.use('/app', express.static(path.resolve(__dirname, '../public/app')));
