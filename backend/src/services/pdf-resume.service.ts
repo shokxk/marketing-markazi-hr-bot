@@ -13,6 +13,71 @@ interface ResumeData {
   faceIdPath?: string;
 }
 
+function sanitizePdfText(text: string | null | undefined): string {
+  if (!text) return '';
+  let str = String(text);
+
+  // 1. Map Uzbek Cyrillic & Russian characters to clean Latin equivalents
+  const cyrillicToLatinMap: Record<string, string> = {
+    'Ў': "O'", 'ў': "o'",
+    'Ғ': "G'", 'ғ': "g'",
+    'Қ': 'Q',   'қ': 'q',
+    'Ҳ': 'H',   'ҳ': 'h',
+    'А': 'A',   'а': 'a',
+    'Б': 'B',   'б': 'b',
+    'В': 'V',   'в': 'v',
+    'Г': 'G',   'г': 'g',
+    'Д': 'D',   'д': 'd',
+    'Е': 'E',   'е': 'e',
+    'Ё': 'Yo',  'ё': 'yo',
+    'Ж': 'J',   'ж': 'j',
+    'З': 'Z',   'з': 'z',
+    'И': 'I',   'и': 'i',
+    'Й': 'Y',   'й': 'y',
+    'К': 'K',   'к': 'k',
+    'Л': 'L',   'л': 'l',
+    'М': 'M',   'м': 'm',
+    'Н': 'N',   'н': 'n',
+    'О': 'O',   'о': 'o',
+    'П': 'P',   'п': 'p',
+    'Р': 'R',   'р': 'r',
+    'С': 'S',   'с': 's',
+    'Т': 'T',   'т': 't',
+    'У': 'U',   'у': 'u',
+    'Ф': 'F',   'ф': 'f',
+    'Х': 'X',   'х': 'x',
+    'Ц': 'Ts',  'ц': 'ts',
+    'Ч': 'Ch',  'ч': 'ch',
+    'Ш': 'Sh',  'ш': 'sh',
+    'Щ': 'Shch','щ': 'shch',
+    'Ъ': "'",   'ъ': "'",
+    'Ы': 'I',   'ы': 'i',
+    'Ь': '',    'ь': '',
+    'Э': 'E',   'э': 'e',
+    'Ю': 'Yu',  'ю': 'yu',
+    'Я': 'Ya',  'я': 'ya'
+  };
+
+  str = str.replace(/[А-Яа-яЁёЎўҒғҚқҲҳ]/g, (char) => cyrillicToLatinMap[char] || char);
+
+  // 2. Replace all Uzbek modifier letters, smart quotes & apostrophes with standard single quote `'`
+  str = str.replace(/[\u2018\u2019\u02BB\u02BC\u0060\u00B4\u201B\u02B9`']/g, "'");
+
+  // 3. Replace smart double quotes with standard double quote `"`
+  str = str.replace(/[\u201C\u201D\u00AB\u00BB]/g, '"');
+
+  // 4. Replace special dashes, hyphens and bullets with ASCII standard equivalents
+  str = str.replace(/[\u2013\u2014\u2212]/g, '-');
+  str = str.replace(/\u2026/g, '...');
+  str = str.replace(/[\u2022\u00B7]/g, '-');
+  str = str.replace(/\u2192/g, '->');
+
+  // 5. Remove any remaining unsupported characters outside ASCII printable range
+  str = str.replace(/[^\x20-\x7E\r\n\t]/g, '');
+
+  return str;
+}
+
 export async function generateCandidatePdfResume(data: ResumeData): Promise<string> {
   return new Promise((resolve, reject) => {
     try {
@@ -21,8 +86,15 @@ export async function generateCandidatePdfResume(data: ResumeData): Promise<stri
         fs.mkdirSync(outputDir, { recursive: true });
       }
 
+      const candidateNameClean = sanitizePdfText(data.candidateName);
+      const companyNameClean = sanitizePdfText(data.companyName);
+      const vacancyTitleClean = sanitizePdfText(data.vacancyTitle);
+      const phoneClean = sanitizePdfText(data.phone);
+      const cityClean = sanitizePdfText(data.city);
+      const ageClean = sanitizePdfText(data.age);
+
       const sanitizeFilename = (name: string) => name.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const fileName = `Resume_${sanitizeFilename(data.candidateName)}_${Date.now()}.pdf`;
+      const fileName = `Resume_${sanitizeFilename(candidateNameClean)}_${Date.now()}.pdf`;
       const filePath = path.join(outputDir, fileName);
 
       const doc = new PDFDocument({ margin: 40, size: 'A4' });
@@ -57,13 +129,13 @@ export async function generateCandidatePdfResume(data: ResumeData): Promise<stri
         }
       }
 
-      doc.fillColor(textColor).fontSize(16).font('Helvetica-Bold').text(data.candidateName, textX, currentY + 12);
-      doc.fontSize(11).font('Helvetica-Bold').fillColor(primaryColor).text(`${data.companyName} — ${data.vacancyTitle}`, textX, currentY + 32);
+      doc.fillColor(textColor).fontSize(16).font('Helvetica-Bold').text(candidateNameClean, textX, currentY + 12);
+      doc.fontSize(11).font('Helvetica-Bold').fillColor(primaryColor).text(`${companyNameClean} — ${vacancyTitleClean}`, textX, currentY + 32);
 
       doc.fontSize(10).font('Helvetica').fillColor(textColor);
-      doc.text(`Telefon: ${data.phone || 'Nomalum'}`, textX, currentY + 52);
-      doc.text(`Manzil: ${data.city || 'Ko\'rsatilmadi'}`, textX, currentY + 68);
-      doc.text(`Yosh: ${data.age || 'Nomalum'} yosh | Reyting: 92/100 (Mos)`, textX, currentY + 84);
+      doc.text(`Telefon: ${phoneClean || 'Nomalum'}`, textX, currentY + 52);
+      doc.text(`Manzil: ${cityClean || 'Ko\'rsatilmadi'}`, textX, currentY + 68);
+      doc.text(`Yosh: ${ageClean || 'Nomalum'} yosh | Reyting: 92/100 (Mos)`, textX, currentY + 84);
 
       currentY += 130;
 
@@ -122,8 +194,10 @@ export async function generateCandidatePdfResume(data: ResumeData): Promise<stri
       for (const [key, val] of Object.entries(data.answers)) {
         if (key === 'telegram_id' || key === 'username' || key === 'face_id_url') continue;
 
-        const qTitle = questionLabels[key] || `${itemIndex}. ${key}`;
-        const answerText = String(val || 'Javob berilmadi');
+        const rawTitle = questionLabels[key] || `${itemIndex}. ${key}`;
+        const qTitleClean = sanitizePdfText(rawTitle);
+        const rawAnswer = String(val || 'Javob berilmadi');
+        const answerTextClean = sanitizePdfText(rawAnswer);
 
         // Page break check
         if (currentY > 730) {
@@ -131,11 +205,11 @@ export async function generateCandidatePdfResume(data: ResumeData): Promise<stri
           currentY = 40;
         }
 
-        doc.fillColor(textColor).fontSize(10).font('Helvetica-Bold').text(qTitle, 40, currentY);
+        doc.fillColor(textColor).fontSize(10).font('Helvetica-Bold').text(qTitleClean, 40, currentY);
         currentY += 14;
 
-        doc.fillColor('#334155').fontSize(10).font('Helvetica').text(`-> ${answerText}`, 55, currentY, { width: 490 });
-        const textHeight = doc.heightOfString(`-> ${answerText}`, { width: 490 });
+        doc.fillColor('#334155').fontSize(10).font('Helvetica').text(`-> ${answerTextClean}`, 55, currentY, { width: 490 });
+        const textHeight = doc.heightOfString(`-> ${answerTextClean}`, { width: 490 });
         currentY += textHeight + 10;
 
         itemIndex++;
