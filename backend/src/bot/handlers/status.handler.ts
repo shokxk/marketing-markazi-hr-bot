@@ -8,11 +8,13 @@ const prisma = new PrismaClient();
 
 const STATUS_MAP: Record<string, string> = {
   SUBMITTED: '📋 Qabul qilindi, ko\'rib chiqilmoqda',
+  NEW: '📋 Yangi ariza, ko\'rib chiqilmoqda',
   UNDER_REVIEW: '🔍 HR menejer ko\'rib chiqmoqda',
   INTERVIEW_SCHEDULED: '📞 Telefon suhbati rejalashtirildi',
   OFFLINE_INTERVIEW: '🏢 Oflayn suhbatga taklif qilindingiz',
   ACCEPTED: '🎉 Ishga qabul qilindingiz!',
   REJECTED: '😔 Rad etildi',
+  DRAFT: '⏳ Qoralama (yakunlanmagan)',
 };
 
 export async function handleStatusCheckCommand(ctx: BotContext) {
@@ -21,39 +23,55 @@ export async function handleStatusCheckCommand(ctx: BotContext) {
 
   if (!telegramUserId) return;
 
-  const user = await prisma.user.findUnique({
-    where: { telegramUserId: BigInt(telegramUserId) },
-    include: {
-      applications: {
-        orderBy: { createdAt: 'desc' },
-        include: { company: true, vacancy: true },
+  try {
+    const user = await prisma.user.findUnique({
+      where: { telegramUserId: BigInt(telegramUserId) },
+      include: {
+        applications: {
+          orderBy: { createdAt: 'desc' },
+          include: { company: true, vacancy: true },
+        },
       },
-    },
-  });
+    });
 
-  if (!user || user.applications.length === 0) {
+    if (!user || !user.applications || user.applications.length === 0) {
+      await ctx.reply(t('no_applications_found', lang), {
+        reply_markup: getMainMenuKeyboard(lang),
+      });
+      return;
+    }
+
+    let text = `<b>🔍 Arizalaringiz holati:</b>\n━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    user.applications.forEach((app, idx) => {
+      const statusText = STATUS_MAP[app.status] || app.status || 'Ko\'rib chiqilmoqda';
+      const compName = app.company?.name || 'Marketing Markazi Hamkori';
+      const vacTitle = app.vacancy?.title || 'Call Center / Sotuv Menejeri';
+      let dateStr = '2026-08-17';
+      try {
+        if (app.createdAt) {
+          dateStr = new Date(app.createdAt).toISOString().split('T')[0];
+        }
+      } catch {}
+
+      text += `${idx + 1}. <b>${compName}</b> — <i>${vacTitle}</i>\n`;
+      text += `   📌 Ariza №: <code>${app.applicationNumber}</code>\n`;
+      text += `   📊 Holat: <b>${statusText}</b>\n`;
+      text += `   📅 Sana: ${dateStr}\n\n`;
+    });
+
+    text += `💬 Qo'shimcha savollar bo'lsa: @${config.supportUsername}`;
+
+    await ctx.reply(text, {
+      parse_mode: 'HTML',
+      reply_markup: getMainMenuKeyboard(lang),
+    });
+  } catch (err: any) {
+    console.error('Status check error:', err.message);
     await ctx.reply(t('no_applications_found', lang), {
       reply_markup: getMainMenuKeyboard(lang),
     });
-    return;
   }
-
-  let text = `<b>🔍 Arizalaringiz holati:</b>\n━━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-  user.applications.forEach((app, idx) => {
-    const statusText = STATUS_MAP[app.status] || app.status;
-    text += `${idx + 1}. <b>${app.company.name}</b> — <i>${app.vacancy.title}</i>\n`;
-    text += `   📌 Ariza №: <code>${app.applicationNumber}</code>\n`;
-    text += `   📊 Holat: <b>${statusText}</b>\n`;
-    text += `   📅 Sana: ${app.createdAt.toISOString().split('T')[0]}\n\n`;
-  });
-
-  text += `💬 Qo'shimcha savollar bo'lsa: @${config.supportUsername}`;
-
-  await ctx.reply(text, {
-    parse_mode: 'HTML',
-    reply_markup: getMainMenuKeyboard(lang),
-  });
 }
 
 export async function handleHelpCommand(ctx: BotContext) {

@@ -189,6 +189,29 @@ export function createBotInstance() {
   bot.callbackQuery('video_sample', handleVideoSample);
   bot.callbackQuery('skip_video', handleSkipVideo);
 
+  bot.callbackQuery('help_anketa', async (ctx) => {
+    await ctx.answerCallbackQuery();
+    await ctx.reply(
+      `📝 <b>Anketa bo'yicha yordam:</b>\n\n` +
+      `• Anketada jami 21 ta savol mavjud.\n` +
+      `• Har bir savolga to'g'ri va to'liq javob bering.\n` +
+      `• Qo'shimcha telefon yoki savollarda "⏩ O'tkazib yuborish" tugmasidan foydalanishingiz mumkin.\n` +
+      `• Boshlash uchun: /start bosing yoki pastdagi "📝 Anketani boshlash" tugmasini tanlang.`,
+      { parse_mode: 'HTML' }
+    );
+  });
+
+  bot.callbackQuery('help_video', async (ctx) => {
+    await ctx.answerCallbackQuery();
+    await ctx.reply(
+      `🎥 <b>Video tanishtiruv bo'yicha yordam:</b>\n\n` +
+      `• 30–60 soniyalik Telegram video xabar (🎭 kruglyash) yoki oddiy video yuboring.\n` +
+      `• O'zingiz haqingizda qisqacha ma'lumot va nima uchun sizni tanlashimiz kerakligini ayting.\n` +
+      `• Agar video yubora olmasangiz, "⏩ Keyinroq yuboraman" tugmasini bosishingiz mumkin.`,
+      { parse_mode: 'HTML' }
+    );
+  });
+
   bot.callbackQuery('app_submit', handleAppSubmit);
   bot.callbackQuery('app_edit', handleAppEditPrompt);
   bot.callbackQuery('app_cancel', handleQuestionCancel);
