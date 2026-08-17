@@ -10,7 +10,7 @@ export function getMainMenuKeyboard(lang = 'uz') {
     .text(t('btn_start_anketa', lang))
     .text(t('btn_vacancies', lang))
     .row()
-    .text(t('btn_status', lang))
+    .text(t('btn_help', lang))
     .resized();
 }
 
