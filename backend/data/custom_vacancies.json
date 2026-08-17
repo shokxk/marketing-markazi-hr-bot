@@ -1,0 +1,14 @@
+[
+  {
+    "id": "zember-callcenter-001",
+    "companyName": "Zember",
+    "logoUrl": "https://images.unsplash.com/photo-1572021335469-31706a17aaef?auto=format&fit=crop&w=300&q=80",
+    "vacancyTitle": "Sotuv menejeri (Call centr)",
+    "salaryFix": 8000000,
+    "salaryMax": 15000000,
+    "requirements": "Sotuv va Call Center tajribasi, O'zbek tilida ravon nutq, mas'uliyatlilik va faollik",
+    "location": "Qo'qon sanoat zonasi, Qo'qon aeroporti orqasi",
+    "schedule": "09:00–18:00 (6/1)",
+    "createdAt": "2026-08-17T15:26:00.000Z"
+  }
+]

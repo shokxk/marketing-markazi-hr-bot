@@ -262,9 +262,105 @@ app.post('/api/admin/vacancies/delete/:id', async (req, res) => {
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
     await prisma.vacancy.update({ where: { id }, data: { isActive: false } });
+    
+    // Also mark in persistent JSON backup
+    try {
+      const fs = await import('fs');
+      const pathMod = await import('path');
+      const customVacFile = pathMod.resolve(process.cwd(), 'data/custom_vacancies.json');
+      if (fs.existsSync(customVacFile)) {
+        let list: any[] = JSON.parse(fs.readFileSync(customVacFile, 'utf8'));
+        list = list.filter(v => v.id !== id);
+        fs.writeFileSync(customVacFile, JSON.stringify(list, null, 2), 'utf8');
+      }
+    } catch {}
+
     await prisma.$disconnect();
     cachedVacancies = null; // Invalidate cache
     res.json({ status: 'ok', message: 'Vakansiya o\'chirildi' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin Vacancy Update / Edit
+app.post('/api/admin/vacancies/update/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { companyName, vacancyTitle, salaryFix, salaryMax, requirements, location, schedule, logoUrl } = req.body;
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    const existingVac = await prisma.vacancy.findUnique({
+      where: { id },
+      include: { company: true }
+    });
+
+    if (!existingVac) {
+      await prisma.$disconnect();
+      return res.status(404).json({ error: 'Vakansiya topilmadi' });
+    }
+
+    if (companyName) {
+      await prisma.company.update({
+        where: { id: existingVac.companyId },
+        data: {
+          name: companyName.trim(),
+          logoUrl: logoUrl || existingVac.company.logoUrl,
+          city: location || existingVac.company.city,
+        }
+      });
+    }
+
+    const parsedSalaryFrom = parseInt(String(salaryFix || existingVac.salaryFrom).replace(/\D/g, '')) || 4000000;
+    const parsedSalaryTo = parseInt(String(salaryMax || existingVac.salaryTo).replace(/\D/g, '')) || (parsedSalaryFrom + 2000000);
+
+    const updated = await prisma.vacancy.update({
+      where: { id },
+      data: {
+        title: vacancyTitle ? vacancyTitle.trim() : existingVac.title,
+        requirements: requirements || existingVac.requirements,
+        salaryFrom: parsedSalaryFrom,
+        salaryTo: parsedSalaryTo,
+        city: location || existingVac.city,
+        workSchedule: schedule || existingVac.workSchedule,
+      }
+    });
+
+    // Update persistent JSON backup
+    try {
+      const fs = await import('fs');
+      const pathMod = await import('path');
+      const customVacFile = pathMod.resolve(process.cwd(), 'data/custom_vacancies.json');
+      if (fs.existsSync(customVacFile)) {
+        let list: any[] = JSON.parse(fs.readFileSync(customVacFile, 'utf8'));
+        const idx = list.findIndex(v => v.id === id || v.vacancyTitle === existingVac.title);
+        const updatedObj = {
+          id: updated.id,
+          companyName: companyName || existingVac.company.name,
+          logoUrl: logoUrl || existingVac.company.logoUrl,
+          vacancyTitle: updated.title,
+          salaryFix: parsedSalaryFrom,
+          salaryMax: parsedSalaryTo,
+          requirements: updated.requirements,
+          location: updated.city,
+          schedule: updated.workSchedule,
+          updatedAt: new Date().toISOString()
+        };
+        if (idx >= 0) {
+          list[idx] = updatedObj;
+        } else {
+          list.push(updatedObj);
+        }
+        fs.writeFileSync(customVacFile, JSON.stringify(list, null, 2), 'utf8');
+      }
+    } catch (e: any) {
+      console.error('Update custom vac backup error:', e.message);
+    }
+
+    await prisma.$disconnect();
+    cachedVacancies = null; // Invalidate cache
+    res.json({ status: 'ok', vacancy: updated });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

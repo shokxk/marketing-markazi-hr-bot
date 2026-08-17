@@ -572,12 +572,61 @@
   </div>
 </div>
 
+<!-- Edit Vacancy Modal -->
+<div class="modal-overlay" id="editVacancyModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Vakansiyani tahrirlash</div>
+      <button class="modal-close" onclick="closeModal('editVacancyModal')">×</button>
+    </div>
+    <form id="editVacancyForm" onsubmit="handleUpdateVacancy(event)">
+      <input type="hidden" id="editVacId">
+      <div class="form-grid" style="padding:16px;">
+        <div class="form-group">
+          <label class="form-label">Kompaniya nomi *</label>
+          <input class="form-input" id="editCompanyName" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vakansiya nomi *</label>
+          <input class="form-input" id="editVacancyTitle" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fiks maosh (UZS) *</label>
+          <input class="form-input" id="editSalaryFix" type="number" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">KPI bilan daromad</label>
+          <input class="form-input" id="editSalaryMax">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Manzil (shahar)</label>
+          <input class="form-input" id="editLocation">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ish grafigi</label>
+          <input class="form-input" id="editSchedule">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Talablar</label>
+          <textarea class="form-input" id="editRequirements" rows="3"></textarea>
+        </div>
+      </div>
+      <div style="padding:0 16px 20px;">
+        <button type="submit" class="btn btn-primary btn-full" id="editSubmitBtn">
+          💾 O'zgarishlarni saqlash
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
   // ── State ──
   let allCandidates = [];
+  let allVacancies = [];
   let currentCandidateId = null;
   let currentCandidateTgId = null;
 
@@ -615,13 +664,13 @@
     try {
       const r = await fetch('/api/webapp/vacancies');
       const d = await r.json();
-      const list = d.vacancies || [];
-      document.getElementById('vacBadge').textContent = list.length;
-      if (!list.length) {
+      allVacancies = d.vacancies || [];
+      document.getElementById('vacBadge').textContent = allVacancies.length;
+      if (!allVacancies.length) {
         el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Hozircha vakansiyalar yo\'q</p></div>';
         return;
       }
-      el.innerHTML = list.map(v => `
+      el.innerHTML = allVacancies.map(v => `
         <div class="vacancy-item">
           <img class="vacancy-logo" src="${v.logoUrl || ''}" onerror="this.style.display='none'" alt="">
           <div class="vacancy-info">
@@ -629,7 +678,7 @@
             <div class="vacancy-company">📍 ${v.city} | 💰 ${v.salary}</div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="btn btn-ghost btn-sm" onclick="editVacancy('${v.id}')">✏️</button>
+            <button class="btn btn-ghost btn-sm" onclick="openEditVacancy('${v.id}')">✏️</button>
             <button class="btn btn-danger btn-sm" onclick="deleteVacancy('${v.id}')">🗑</button>
           </div>
         </div>
@@ -639,15 +688,63 @@
     }
   }
 
+  function openEditVacancy(id) {
+    const vac = allVacancies.find(v => v.id === id);
+    if (!vac) return;
+    document.getElementById('editVacId').value = vac.id;
+    document.getElementById('editCompanyName').value = vac.company || '';
+    document.getElementById('editVacancyTitle').value = vac.title || '';
+    document.getElementById('editSalaryFix').value = (vac.salary || '').replace(/\D/g, '').slice(0, 7) || '4000000';
+    document.getElementById('editSalaryMax').value = vac.salary || '';
+    document.getElementById('editLocation').value = vac.city || vac.address || '';
+    document.getElementById('editSchedule').value = vac.workSchedule || '6/1';
+    document.getElementById('editRequirements').value = vac.requirements || '';
+    openModal('editVacancyModal');
+  }
+
+  async function handleUpdateVacancy(e) {
+    e.preventDefault();
+    const id = document.getElementById('editVacId').value;
+    const btn = document.getElementById('editSubmitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Saqlanmoqda...';
+
+    const payload = {
+      companyName: document.getElementById('editCompanyName').value.trim(),
+      vacancyTitle: document.getElementById('editVacancyTitle').value.trim(),
+      salaryFix: document.getElementById('editSalaryFix').value.trim(),
+      salaryMax: document.getElementById('editSalaryMax').value.trim(),
+      requirements: document.getElementById('editRequirements').value.trim(),
+      location: document.getElementById('editLocation').value.trim(),
+      schedule: document.getElementById('editSchedule').value.trim(),
+    };
+
+    try {
+      const res = await fetch('/api/admin/vacancies/update/' + id, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'ok') {
+        toast('✅ Vakansiya muvaffaqiyatli tahrirlandi!');
+        closeModal('editVacancyModal');
+        await loadVacancies();
+      } else {
+        toast('Xatolik: ' + (data.error || 'Saqlab bo\'lmadi'), 'error');
+      }
+    } catch(err) {
+      toast('Server bilan aloqa xatosi', 'error');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '💾 O\'zgarishlarni saqlash';
+  }
+
   async function deleteVacancy(id) {
     if (!confirm('Vakansiyani o\'chirmoqchimisiz?')) return;
     await fetch('/api/admin/vacancies/delete/' + id, { method:'POST' });
     toast('Vakansiya o\'chirildi');
     loadVacancies();
-  }
-
-  function editVacancy(id) {
-    toast('Tahrirlash: vakansiya IDsi — ' + id, 'success');
   }
 
   // ── UPLOAD LOGO ──
