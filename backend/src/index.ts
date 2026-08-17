@@ -167,6 +167,21 @@ app.get('/api/webapp/vacancies', async (req, res) => {
   }
 });
 
+function parseSalarySafe(val: any, fallback: number = 4000000): number {
+  if (typeof val === 'number') {
+    if (isNaN(val) || val <= 0) return fallback;
+    return Math.min(val, 2000000000);
+  }
+  if (!val) return fallback;
+  const str = String(val).trim();
+  const chunks = str.split(/[-–—/]/).map(s => s.trim()).filter(Boolean);
+  const targetChunk = chunks[chunks.length - 1] || chunks[0] || str;
+  const cleaned = targetChunk.replace(/\D/g, '');
+  const num = parseInt(cleaned, 10);
+  if (isNaN(num) || num <= 0) return fallback;
+  return Math.min(num, 2000000000);
+}
+
 // Admin Vacancy Create / Edit / Delete
 app.post('/api/admin/vacancies/create', async (req, res) => {
   try {
@@ -195,8 +210,8 @@ app.post('/api/admin/vacancies/create', async (req, res) => {
       });
     }
 
-    const parsedSalaryFrom = parseInt(String(salaryFix || '4000000').replace(/\D/g, '')) || 4000000;
-    const parsedSalaryTo = parseInt(String(salaryMax || '6000000').replace(/\D/g, '')) || (parsedSalaryFrom + 2000000);
+    const parsedSalaryFrom = parseSalarySafe(salaryFix, 4000000);
+    const parsedSalaryTo = parseSalarySafe(salaryMax, parsedSalaryFrom + 2000000);
 
     const desc = `${companyName.trim().toUpperCase()} JAMOASIGA ${vacancyTitle.trim().toUpperCase()} ISHGA TAKLIF ETADI!\n\n` +
       `Nomzodga qo'yiladigan talablar:\n${requirements || 'Mas\'uliyatli va intizomli nomzod'}\n\n` +
@@ -291,6 +306,12 @@ app.post('/api/admin/vacancies/update/:id', async (req, res) => {
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
 
+    // Fix raw DB overflow if any
+    try {
+      await prisma.$executeRawUnsafe(`UPDATE vacancies SET salaryTo = 15000000 WHERE salaryTo > 2000000000;`);
+      await prisma.$executeRawUnsafe(`UPDATE vacancies SET salaryFrom = 8000000 WHERE salaryFrom > 2000000000;`);
+    } catch {}
+
     const existingVac = await prisma.vacancy.findUnique({
       where: { id },
       include: { company: true }
@@ -312,8 +333,8 @@ app.post('/api/admin/vacancies/update/:id', async (req, res) => {
       });
     }
 
-    const parsedSalaryFrom = parseInt(String(salaryFix || existingVac.salaryFrom).replace(/\D/g, '')) || 4000000;
-    const parsedSalaryTo = parseInt(String(salaryMax || existingVac.salaryTo).replace(/\D/g, '')) || (parsedSalaryFrom + 2000000);
+    const parsedSalaryFrom = parseSalarySafe(salaryFix, existingVac.salaryFrom || 4000000);
+    const parsedSalaryTo = parseSalarySafe(salaryMax, existingVac.salaryTo || (parsedSalaryFrom + 2000000));
 
     const updated = await prisma.vacancy.update({
       where: { id },
@@ -362,6 +383,7 @@ app.post('/api/admin/vacancies/update/:id', async (req, res) => {
     cachedVacancies = null; // Invalidate cache
     res.json({ status: 'ok', vacancy: updated });
   } catch (err: any) {
+    console.error('Update vacancy error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -924,6 +946,11 @@ async function autoSeed() {
 
     // Restore any custom vacancies from persistent JSON file
     try {
+      try {
+        await prisma.$executeRawUnsafe(`UPDATE vacancies SET salaryTo = 15000000 WHERE salaryTo > 2000000000;`);
+        await prisma.$executeRawUnsafe(`UPDATE vacancies SET salaryFrom = 8000000 WHERE salaryFrom > 2000000000;`);
+      } catch {}
+
       const fs = await import('fs');
       const pathMod = await import('path');
       const customVacFile = pathMod.resolve(process.cwd(), 'data/custom_vacancies.json');
@@ -951,8 +978,8 @@ async function autoSeed() {
                 title: cv.vacancyTitle,
                 description: `${c.name} jamoasiga ${cv.vacancyTitle} taklif etiladi`,
                 requirements: cv.requirements,
-                salaryFrom: cv.salaryFix,
-                salaryTo: cv.salaryMax,
+                salaryFrom: parseSalarySafe(cv.salaryFix, 8000000),
+                salaryTo: parseSalarySafe(cv.salaryMax, 15000000),
                 city: cv.location,
                 workSchedule: cv.schedule,
                 isActive: true
