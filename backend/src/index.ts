@@ -171,13 +171,22 @@ app.get('/api/webapp/vacancies', async (req, res) => {
 app.post('/api/admin/vacancies/create', async (req, res) => {
   try {
     const { companyName, vacancyTitle, salaryFix, salaryMax, requirements, location, schedule, logoUrl } = req.body;
+    if (!companyName || !vacancyTitle) {
+      return res.status(400).json({ error: 'Kompaniya va Vakansiya nomi kiritilishi shart!' });
+    }
+
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
 
-    let comp = await prisma.company.findFirst({ where: { name: companyName } });
+    let comp = await prisma.company.findFirst({ where: { name: companyName.trim() } });
     if (!comp) {
       comp = await prisma.company.create({
-        data: { name: companyName, logoUrl: logoUrl || null, city: location, isActive: true }
+        data: {
+          name: companyName.trim(),
+          logoUrl: logoUrl || 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=300&q=80',
+          city: location || 'Quva shahri',
+          isActive: true
+        }
       });
     } else if (logoUrl) {
       await prisma.company.update({
@@ -186,24 +195,63 @@ app.post('/api/admin/vacancies/create', async (req, res) => {
       });
     }
 
+    const parsedSalaryFrom = parseInt(String(salaryFix || '4000000').replace(/\D/g, '')) || 4000000;
+    const parsedSalaryTo = parseInt(String(salaryMax || '6000000').replace(/\D/g, '')) || (parsedSalaryFrom + 2000000);
+
+    const desc = `${companyName.trim().toUpperCase()} JAMOASIGA ${vacancyTitle.trim().toUpperCase()} ISHGA TAKLIF ETADI!\n\n` +
+      `Nomzodga qo'yiladigan talablar:\n${requirements || 'Mas\'uliyatli va intizomli nomzod'}\n\n` +
+      `💰 Fiks Maosh: ${parsedSalaryFrom.toLocaleString()} UZS (${salaryMax || 'Bonuslar bilan'})\n` +
+      `📍 Manzil: ${location || 'O\'zbekiston'}\n` +
+      `🕒 Ish grafigi: ${schedule || '6/1'}`;
+
     const vacancy = await prisma.vacancy.create({
       data: {
         companyId: comp.id,
-        title: vacancyTitle,
-        description: `FLOURENZA JAMOASIGA ${vacancyTitle.toUpperCase()} ISHGA TAKLIF ETADI!\n\nNomzodga qo'yiladigan talablar:\n${requirements}\n\nFiks Maosh: ${salaryFix} UZS + KPI (${salaryMax})\nManzil: ${location}\nGrafik: ${schedule}`,
-        requirements,
-        salaryFrom: parseInt(salaryFix) || 4000000,
-        salaryTo: parseInt(salaryFix) + 2000000,
-        city: location,
-        workSchedule: schedule,
+        title: vacancyTitle.trim(),
+        description: desc,
+        requirements: requirements || 'Mas\'uliyatli, intizomli nomzod',
+        salaryFrom: parsedSalaryFrom,
+        salaryTo: parsedSalaryTo,
+        city: location || 'Quva shahri',
+        workSchedule: schedule || '6/1',
         isActive: true
       }
     });
 
+    // Save to persistent JSON backup for custom vacancies
+    try {
+      const fs = await import('fs');
+      const pathMod = await import('path');
+      const backupDir = pathMod.resolve(process.cwd(), 'data');
+      if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+      const customVacFile = pathMod.join(backupDir, 'custom_vacancies.json');
+      let existingVacs: any[] = [];
+      if (fs.existsSync(customVacFile)) {
+        try { existingVacs = JSON.parse(fs.readFileSync(customVacFile, 'utf8')); } catch {}
+      }
+      existingVacs.push({
+        id: vacancy.id,
+        companyName: comp.name,
+        logoUrl: comp.logoUrl,
+        vacancyTitle: vacancy.title,
+        salaryFix: parsedSalaryFrom,
+        salaryMax: parsedSalaryTo,
+        requirements: vacancy.requirements,
+        location: vacancy.city,
+        schedule: vacancy.workSchedule,
+        createdAt: new Date().toISOString()
+      });
+      fs.writeFileSync(customVacFile, JSON.stringify(existingVacs, null, 2), 'utf8');
+      console.log(`💾 Vacancy ${vacancy.title} saved to persistent custom_vacancies.json!`);
+    } catch (e: any) {
+      console.error('Custom vacancy backup write error:', e.message);
+    }
+
     await prisma.$disconnect();
-    cachedVacancies = null; // Invalidate cache
+    cachedVacancies = null; // Invalidate cache immediately
     res.json({ status: 'ok', vacancy });
   } catch (err: any) {
+    console.error('Create vacancy API error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -776,6 +824,50 @@ async function autoSeed() {
       }
     } catch (bkRestErr: any) {
       console.log('Backup restore info:', bkRestErr.message);
+    }
+
+    // Restore any custom vacancies from persistent JSON file
+    try {
+      const fs = await import('fs');
+      const pathMod = await import('path');
+      const customVacFile = pathMod.resolve(process.cwd(), 'data/custom_vacancies.json');
+      if (fs.existsSync(customVacFile)) {
+        const customVacs: any[] = JSON.parse(fs.readFileSync(customVacFile, 'utf8'));
+        for (const cv of customVacs) {
+          let c = await prisma.company.findFirst({ where: { name: cv.companyName } });
+          if (!c) {
+            c = await prisma.company.create({
+              data: {
+                name: cv.companyName,
+                logoUrl: cv.logoUrl || null,
+                city: cv.location || null,
+                isActive: true
+              }
+            });
+          }
+          const vExists = await prisma.vacancy.findFirst({
+            where: { companyId: c.id, title: cv.vacancyTitle, isActive: true }
+          });
+          if (!vExists) {
+            await prisma.vacancy.create({
+              data: {
+                companyId: c.id,
+                title: cv.vacancyTitle,
+                description: `${c.name} jamoasiga ${cv.vacancyTitle} taklif etiladi`,
+                requirements: cv.requirements,
+                salaryFrom: cv.salaryFix,
+                salaryTo: cv.salaryMax,
+                city: cv.location,
+                workSchedule: cv.schedule,
+                isActive: true
+              }
+            });
+          }
+        }
+        console.log(`✅ Verified/Restored ${customVacs.length} custom vacancies from backup!`);
+      }
+    } catch (cvErr: any) {
+      console.log('Custom vacancy restore info:', cvErr.message);
     }
 
     await prisma.$disconnect();

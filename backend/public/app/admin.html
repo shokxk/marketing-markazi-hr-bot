@@ -691,29 +691,36 @@
     btn.innerHTML = '<div class="spinner"></div> Saqlanmoqda...';
 
     const payload = {
-      companyName: document.getElementById('companyName').value,
+      companyName: document.getElementById('companyName').value.trim(),
       logoUrl: document.getElementById('logoUrl').value,
-      vacancyTitle: document.getElementById('vacancyTitle').value,
-      salaryFix: document.getElementById('salaryFix').value,
-      salaryMax: document.getElementById('salaryMax').value,
-      requirements: document.getElementById('requirements').value,
-      location: document.getElementById('location').value,
-      schedule: document.getElementById('schedule').value,
+      vacancyTitle: document.getElementById('vacancyTitle').value.trim(),
+      salaryFix: document.getElementById('salaryFix').value.trim(),
+      salaryMax: document.getElementById('salaryMax').value.trim(),
+      requirements: document.getElementById('requirements').value.trim(),
+      location: document.getElementById('location').value.trim(),
+      schedule: document.getElementById('schedule').value.trim(),
     };
     try {
-      await fetch('/api/admin/vacancies/create', {
+      const res = await fetch('/api/admin/vacancies/create', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify(payload)
       });
-      toast('✅ Vakansiya saqlandi va Mini App da ko\'rindi!');
-      e.target.reset();
-      document.getElementById('logoPreview').style.display = 'none';
-      document.getElementById('uploadIcon').style.display = 'block';
-      document.getElementById('uploadText').textContent = 'Logotipni yuklash uchun bosing';
-      showPage('vacancies', document.getElementById('nav-vacancies'));
+      const data = await res.json();
+      if (res.ok && data.status === 'ok') {
+        toast('✅ Vakansiya muvaffaqiyatli saqlandi va Mini App da chiqarildi!');
+        e.target.reset();
+        document.getElementById('logoPreview').style.display = 'none';
+        document.getElementById('uploadIcon').style.display = 'block';
+        document.getElementById('uploadText').textContent = 'Logotipni yuklash uchun bosing';
+        document.getElementById('logoUrl').value = '';
+        await loadVacancies();
+        showPage('vacancies', document.getElementById('nav-vacancies'));
+      } else {
+        toast('Xatolik: ' + (data.error || 'Saqlab bo\'lmadi'), 'error');
+      }
     } catch(err) {
-      toast('Xato yuz berdi', 'error');
+      toast('Server bilan aloqa xatosi', 'error');
     }
     btn.disabled = false;
     btn.innerHTML = '🚀 E\'lonni Mini App da chiqarish';
