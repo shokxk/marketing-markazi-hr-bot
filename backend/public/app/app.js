@@ -491,7 +491,7 @@ async function fetchMyApplications() {
 
 // ── Animated Tab Switching ──
 function switchTab(tab, btn) {
-  const sections = ['vacanciesSection', 'applicationsSection', 'supportSection'];
+  const sections = ['vacanciesSection', 'supportSection'];
   const current = sections.find(s => {
     const el = document.getElementById(s);
     return el && !el.classList.contains('hidden');
@@ -514,12 +514,11 @@ function switchTab(tab, btn) {
 }
 
 function showSection(tab) {
-  const map = { vacancies: 'vacanciesSection', applications: 'applicationsSection', support: 'supportSection' };
+  const map = { vacancies: 'vacanciesSection', support: 'supportSection' };
   const el = document.getElementById(map[tab]);
   if (!el) return;
   el.classList.remove('hidden');
   el.style.animation = 'slideIn 0.25s ease forwards';
-  if (tab === 'applications') fetchMyApplications();
 }
 
 function scrollToVacancies() {
