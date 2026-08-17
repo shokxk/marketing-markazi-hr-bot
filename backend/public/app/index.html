@@ -7,10 +7,21 @@
   <title>Marketing Markazi HR — Telegram Mini App</title>
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Google Fonts -->
+  <script>
+    (function() {
+      try {
+        if (window.Telegram && window.Telegram.WebApp) {
+          window.Telegram.WebApp.ready();
+          window.Telegram.WebApp.expand();
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <!-- Google Fonts (Non-blocking fallback) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
   
   <style>
     :root {
@@ -437,6 +448,22 @@
       color: var(--primary);
     }
 
+    .multi-options { display: flex; flex-direction: column; gap: 8px; }
+    .multi-btn {
+      padding: 12px 14px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 2px solid var(--card-border);
+      border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 700; text-align: left;
+      cursor: pointer; color: #fff; transition: var(--transition);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .multi-btn.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: #FFF;
+    }
+
     .wizard-footer { display: flex; gap: 12px; margin-top: 24px; }
     .btn-primary { flex: 1; padding: 14px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-md); font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: 0 4px 14px rgba(255, 90, 54, 0.4); }
 
@@ -616,12 +643,15 @@
     <!-- Main Content Container -->
     <main class="main-content" id="mainContent">
       <!-- HERO BANNER -->
-      <section class="hero-banner">
-        <div class="hero-content">
-          <span class="hero-tag">🔥 Top Vakansiyalar 2026</span>
+      <section class="hero-banner" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
+        <div class="hero-content" style="flex:1;">
+          <span class="hero-tag">🔥 Marketing Markazi 2026</span>
           <h2>Orzuyingizdagi ishni 2 daqiqada toping</h2>
           <p>O'zbekistonning yetakchi marketing kompaniyalarida vakansiyalar</p>
           <button class="hero-btn" onclick="scrollToVacancies()">Vakansiyalarni ko'rish →</button>
+        </div>
+        <div style="width:96px; height:96px; flex-shrink:0; border-radius:50%; overflow:hidden; border:2px solid rgba(255,90,54,0.6); box-shadow:0 8px 24px rgba(255,90,54,0.4);">
+          <img src="/app/mentor.png" alt="Marketing Markazi Mentor" style="width:100%; height:100%; object-fit:cover;">
         </div>
       </section>
 
@@ -762,6 +792,6 @@
     </nav>
   </div>
 
-  <script src="/app/app.js?v=2026_08_04_v10"></script>
+  <script src="app.js?v=2026_08_05_v12"></script>
 </body>
 </html>

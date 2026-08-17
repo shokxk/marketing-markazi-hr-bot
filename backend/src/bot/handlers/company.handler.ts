@@ -75,22 +75,41 @@ export async function handleSelectCompany(ctx: BotContext, companyId: string) {
   await ctx.editMessageText(title, { parse_mode: 'HTML', reply_markup: keyboard });
 }
 
-export async function handleSelectVacancy(ctx: BotContext, vacancyId: string) {
-  await ctx.answerCallbackQuery();
+export async function handleSelectVacancy(ctx: BotContext, vacancyId: string, forceReapply = false) {
+  if (ctx.callbackQuery) await ctx.answerCallbackQuery();
+
   const vacancy = await prisma.vacancy.findUnique({
     where: { id: vacancyId },
     include: { company: true },
   });
   if (!vacancy) return;
 
+  ctx.session.selectedCompanyId = vacancy.companyId;
+  ctx.session.selectedCompanyName = vacancy.company.name;
   ctx.session.selectedVacancyId = vacancy.id;
   ctx.session.selectedVacancyName = vacancy.title;
 
-  // Check duplicate active application for this exact user and vacancy
+  // Auto-upsert User record if missing
   const telegramUserId = BigInt(ctx.from?.id || 0);
-  const user = await prisma.user.findUnique({ where: { telegramUserId } });
+  let user = await prisma.user.findUnique({ where: { telegramUserId } });
+  if (!user && ctx.from?.id) {
+    const fullName = [ctx.from.first_name, ctx.from.last_name].filter(Boolean).join(' ') || 'Nomzod';
+    try {
+      user = await prisma.user.create({
+        data: {
+          telegramUserId,
+          fullName,
+          telegramUsername: ctx.from.username || null,
+          language: ctx.session.lang || 'uz',
+        }
+      });
+    } catch (e: any) {
+      console.error('User auto-create error:', e.message);
+    }
+  }
 
-  if (user) {
+  // Check duplicate active application unless forced
+  if (user && !forceReapply) {
     const existingApp = await prisma.application.findFirst({
       where: {
         userId: user.id,
@@ -100,16 +119,27 @@ export async function handleSelectVacancy(ctx: BotContext, vacancyId: string) {
     });
 
     if (existingApp) {
+      const { InlineKeyboard } = await import('grammy');
       const dupMsg = t('duplicate_active_app', ctx.session.lang, {
         appNumber: existingApp.applicationNumber,
         statusText: existingApp.status,
-      });
-      await ctx.editMessageText(dupMsg, { parse_mode: 'HTML' });
+      }) + `\n\nQayta yangi anketa to'ldirmoqchimisiz? 👇`;
+
+      const keyboard = new InlineKeyboard()
+        .text('🔄 Yangi anketa to\'ldirish', `force_reapply:${vacancy.id}`)
+        .row()
+        .text('⬅️ Boshqa vakansiyani tanlash', 'back_to_companies');
+
+      try {
+        await ctx.editMessageText(dupMsg, { parse_mode: 'HTML', reply_markup: keyboard });
+      } catch (e) {
+        await ctx.reply(dupMsg, { parse_mode: 'HTML', reply_markup: keyboard });
+      }
       return;
     }
   }
 
-  // Create or load draft application record
+  // Create draft application record
   if (user) {
     const appNumber = `HR-2026-${Math.floor(100000 + Math.random() * 900000)}`;
     const app = await prisma.application.create({

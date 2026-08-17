@@ -89,6 +89,56 @@ export function getPhoneRequestKeyboard(lang = 'uz') {
     .resized();
 }
 
+export function getExtraPhoneRequestKeyboard(lang = 'uz') {
+  return new Keyboard()
+    .requestContact(t('btn_send_phone', lang))
+    .row()
+    .text('⏩ O\'tkazib yuborish')
+    .row()
+    .text(t('btn_back', lang))
+    .text(t('btn_cancel', lang))
+    .resized();
+}
+
+export function getExtraPhoneInlineKeyboard(lang = 'uz') {
+  return new InlineKeyboard()
+    .text('⏩ O\'tkazib yuborish', 'skip_extra_phone')
+    .row()
+    .text(t('btn_back', lang), 'question_back')
+    .text(t('btn_cancel', lang), 'question_cancel');
+}
+
+export function getMultiSelectKeyboard(
+  options: string[],
+  selected: string[] = [],
+  showBack = true,
+  lang = 'uz'
+) {
+  const kb = new InlineKeyboard();
+
+  options.forEach((opt, idx) => {
+    const isChecked = selected.includes(opt);
+    const icon = isChecked ? '✅' : '◻️';
+    kb.text(`${icon} ${opt}`, `toggle_multi:${idx}`).row();
+  });
+
+  const confirmText = selected.length > 0
+    ? `🔘 ✅ Tayyor (${selected.length} ta tanlandi)`
+    : '🔘 ✅ Tayyor (Keyingisi)';
+  
+  kb.text(confirmText, 'confirm_multi').row();
+
+  const navRow = [];
+  if (showBack) {
+    navRow.push({ text: t('btn_back', lang), callback_data: 'question_back' });
+  }
+  navRow.push({ text: t('btn_cancel', lang), callback_data: 'question_cancel' });
+
+  navRow.forEach((btn) => kb.text(btn.text, btn.callback_data));
+
+  return kb;
+}
+
 export function getVideoPromptKeyboard(lang = 'uz') {
   return new InlineKeyboard()
     .text(t('btn_video_sample', lang), 'video_sample')
@@ -100,11 +150,11 @@ export function getVideoPromptKeyboard(lang = 'uz') {
 
 export function getPreviewKeyboard(lang = 'uz') {
   return new InlineKeyboard()
-    .text(t('btn_submit_app', lang), 'app_submit')
+    .text('✅ Roziman, arizani yuborish 🚀', 'app_submit')
     .row()
-    .text(t('btn_edit_app', lang), 'app_edit')
+    .text('✏️ Ma\'lumotlarni tahrirlash', 'app_edit')
     .row()
-    .text(t('btn_cancel_app', lang), 'app_cancel');
+    .text('❌ Bekor qilish', 'app_cancel');
 }
 
 export function getEditSectionsKeyboard(lang = 'uz') {

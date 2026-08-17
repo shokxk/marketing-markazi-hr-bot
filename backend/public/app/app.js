@@ -1,9 +1,21 @@
 // Telegram WebApp Initialization
 const tg = window.Telegram?.WebApp;
 if (tg) {
-  tg.expand();
-  tg.enableClosingConfirmation();
+  try {
+    tg.ready();
+    tg.expand();
+    tg.enableClosingConfirmation();
+  } catch (e) {
+    console.warn('Telegram WebApp init warning:', e);
+  }
 }
+
+// Global JS error safeguard to prevent WebView crash
+window.onerror = function(msg, url, line) {
+  console.error('WebApp runtime error:', msg, 'at line', line);
+  if (tg?.ready) tg.ready();
+  return true;
+};
 
 // Global State
 let vacancies = [];
@@ -11,28 +23,29 @@ let currentVacancy = null;
 let currentStepIndex = 0;
 let candidateAnswers = {};
 
-// 20 Rigorous Selection Questions (Otbor Savollari)
+// 21 Rigorous Selection Questions (Otbor Savollari)
 const standardQuestions = [
   { id: '1', code: 'full_name', text: '1. Sizning to\'liq ismingiz (F.I.Sh.)?', type: 'TEXT', placeholder: 'Masalan: Malika Raximova' },
-  { id: '2', code: 'phone', text: '2. Bog\'lanish uchun telefon raqamingiz?', type: 'PHONE', placeholder: '+998 88 555 55 88' },
-  { id: '3', code: 'age', text: '3. Yoshingiz nechada? (20 – 35 yosh ayol nomzod)', type: 'NUMBER', placeholder: 'Masalan: 25' },
-  { id: '4', code: 'city', text: '4. Yashash shahringizni tanlang?', type: 'CHOICE', options: ['Quva', 'Farg\'ona', 'Toshkent', 'Andijon', 'Namangan', 'Samarqand', 'Buxoro', 'Boshqa shahar'] },
-  { id: '5', code: 'marital_status', text: '5. Oilaviy ahvolingiz?', type: 'CHOICE', options: ['Turmush qurmagan', 'Turmush qurgan (farzandli)', 'Farqi yo\'q'] },
-  { id: '6', code: 'education_level', text: '6. Ma\'lumotingiz darajasi?', type: 'CHOICE', options: ['Oliy (Bakalavr/Magistr)', 'O\'rta maxsus (Kollej/Litsey)', 'O\'rta maktab'] },
-  { id: '7', code: 'education_place', text: '7. Qaysi o\'quv muassasasini tamomlagansiz?', type: 'TEXT', placeholder: 'Masalan: FarDU yoki Farg\'ona Kolleji' },
-  { id: '8', code: 'callcenter_exp', text: '8. Call Center yoki Sotuv sohasida tajribangiz bormi?', type: 'CHOICE', options: ['Ha, 6-12 oy tajribam bor', 'Ha, 1 yildan ortiq tajribam bor', 'Yo\'q, lekin tez o\'rganaman'] },
-  { id: '9', code: 'last_job', text: '9. Oxirgi ish joyingiz va lavozimingiz?', type: 'TEXT', placeholder: 'Masalan: ООО "Super-Trade" — Call Center menejer' },
-  { id: '10', code: 'reason_leaving', text: '10. Oxirgi ish joyingizdan ketish sababi?', type: 'TEXT', placeholder: 'Qisqacha sababini kiriting...' },
-  { id: '11', code: 'amocrm_exp', text: '11. amoCRM va kompyuter dasturlari bilan ishlaganmisiz?', type: 'CHOICE', options: ['Ha, amoCRM bilan mukammal ishlayman', 'Kompyuterni bilaman, amoCRM o\'rganaman', 'Yo\'q, yangi o\'rganaman'] },
-  { id: '12', code: 'computer_skills', text: '12. Qaysi kompyuter dasturlarini bilasiz?', type: 'TEXT', placeholder: 'Excel, Telegram, Google Docs, 1C' },
-  { id: '13', code: 'languages', text: '13. Qaysi tillarda ravon muloqot qilasiz?', type: 'CHOICE', options: ['O\'zbek tili — Mukammal', 'O\'zbek va Rus tili — Erkin muloqot'] },
-  { id: '14', code: 'work_schedule', text: '14. 6/1 grafik va 07:00-17:00 / 08:00-18:00 smenalarga tayyormisiz?', type: 'CHOICE', options: ['Ha, to\'liq tayyorman', 'Grafik bo\'yicha savollarim bor'] },
-  { id: '15', code: 'salary_expectation', text: '15. Kutilayotgan oylik maosh (4 mln fiks + KPI bonus)?', type: 'TEXT', placeholder: 'Masalan: 5,000,000 UZS' },
-  { id: '16', code: 'start_date', text: '16. Qachondan ishni boshlashingiz mumkin?', type: 'TEXT', placeholder: 'Masalan: Ertaga yoki 3 kundan keyin' },
-  { id: '17', code: 'sales_case', text: '17. E\'tirozlar bilan ishlash: Mijoz "Qimmat" desa nima degan bo\'lardingiz?', type: 'TEXT', placeholder: 'Qisqacha javobingiz...' },
-  { id: '18', code: 'soft_skills', text: '18. O\'zingizdagi eng kuchli 3 ta sifatni ko\'rsating', type: 'TEXT', placeholder: 'Masalan: Intizom, Muloqot, Stressga chidamlilik' },
-  { id: '19', code: 'motivation', text: '19. Nega aynan bizning jamoada ishlamoqchisiz?', type: 'TEXT', placeholder: 'Sababini yozing...' },
-  { id: '20', code: 'face_id', text: '20. 📸 Face ID / Foto tasdiqlash: O\'zingizning aniq tushgan suratingizni yuboring', type: 'FACE_ID' }
+  { id: '2', code: 'phone', text: '2. Bog\'lanish uchun asosiy telefon raqamingiz?', type: 'PHONE', placeholder: '+998 88 555 55 88' },
+  { id: '3', code: 'extra_phone', text: '3. Qo\'shimcha (zaxira) telefon raqamingiz? (Ixtiyoriy)', type: 'TEXT', placeholder: '+998 90 123 45 67 (yoki bo\'sh qoldiring)' },
+  { id: '4', code: 'age', text: '4. Yoshingiz yoki tug\'ilgan yilingiz? (Masalan: 24 yoki 2002)', type: 'TEXT', placeholder: 'Masalan: 24 yoki 2002' },
+  { id: '5', code: 'city', text: '5. Yashash shahringizni tanlang?', type: 'CHOICE', options: ['Quva', 'Farg\'ona', 'Toshkent', 'Andijon', 'Namangan', 'Samarqand', 'Buxoro', 'Boshqa shahar'] },
+  { id: '6', code: 'marital_status', text: '6. Oilaviy ahvolingiz?', type: 'CHOICE', options: ['Turmush qurmagan', 'Turmush qurgan (farzandli)', 'Farqi yo\'q'] },
+  { id: '7', code: 'education_level', text: '7. Ma\'lumotingiz darajasi?', type: 'CHOICE', options: ['Oliy (Bakalavr/Magistr)', 'O\'rta maxsus (Kollej/Litsey)', 'O\'rta maktab'] },
+  { id: '8', code: 'education_place', text: '8. Qaysi o\'quv muassasasini tamomlagansiz?', type: 'TEXT', placeholder: 'Masalan: FarDU yoki Farg\'ona Kolleji' },
+  { id: '9', code: 'callcenter_exp', text: '9. Call Center yoki Sotuv sohasida tajribangiz bormi?', type: 'CHOICE', options: ['Ha, 6-12 oy tajribam bor', 'Ha, 1 yildan ortiq tajribam bor', 'Yo\'q, lekin tez o\'rganaman'] },
+  { id: '10', code: 'last_job', text: '10. Oxirgi ish joyingiz va lavozimingiz?', type: 'TEXT', placeholder: 'Masalan: ООО "Super-Trade" — Call Center menejer' },
+  { id: '11', code: 'reason_leaving', text: '11. Oxirgi ish joyingizdan ketish sababi?', type: 'TEXT', placeholder: 'Qisqacha sababini kiriting...' },
+  { id: '12', code: 'amocrm_exp', text: '12. amoCRM va kompyuter dasturlari bilan ishlaganmisiz?', type: 'CHOICE', options: ['Ha, amoCRM bilan mukammal ishlayman', 'Kompyuterni bilaman, amoCRM o\'rganaman', 'Yo\'q, yangi o\'rganaman'] },
+  { id: '13', code: 'computer_skills', text: '13. Qaysi kompyuter dasturlarini bilasiz? (Bir nechtasini tanlang 👇)', type: 'MULTI_SELECT', options: ['MS Word & Excel', '1C Buxgalteriya', 'amoCRM / Bitrix24', 'Photoshop / Grafik dasturlar', 'Kompyuterni yaxshi bilaman', 'Boshlang\'ich (o\'rganaman)'] },
+  { id: '14', code: 'languages', text: '14. Qaysi tillarda ravon muloqot qilasiz? (Bir nechtasini tanlang 👇)', type: 'MULTI_SELECT', options: ['O\'zbek tili (Ona tili)', 'Rus tili (Erkin)', 'Rus tili (O\'rtacha)', 'Ingliz tili (Erkin)', 'Ingliz tili (Boshlang\'ich)', 'Tojik tili / Boshqa'] },
+  { id: '15', code: 'work_schedule', text: '15. 6/1 grafik va 07:00-17:00 / 08:00-18:00 smenalarga tayyormisiz?', type: 'CHOICE', options: ['Ha, to\'liq tayyorman', 'Grafik bo\'yicha savollarim bor'] },
+  { id: '16', code: 'salary_expectation', text: '16. Kutilayotgan oylik maosh (4 mln fiks + KPI bonus)?', type: 'TEXT', placeholder: 'Masalan: 5,000,000 UZS' },
+  { id: '17', code: 'start_date', text: '17. Qachondan ishni boshlashingiz mumkin?', type: 'TEXT', placeholder: 'Masalan: Ertaga yoki 3 kundan keyin' },
+  { id: '18', code: 'sales_case', text: '18. E\'tirozlar bilan ishlash: Mijoz "Qimmat" desa nima degan bo\'lardingiz?', type: 'TEXT', placeholder: 'Qisqacha javobingiz...' },
+  { id: '19', code: 'soft_skills', text: '19. O\'zingizdagi eng kuchli 3 ta sifatni ko\'rsating', type: 'TEXT', placeholder: 'Masalan: Intizom, Muloqot, Stressga chidamlilik' },
+  { id: '20', code: 'motivation', text: '20. Nega aynan bizning jamoada ishlamoqchisiz?', type: 'TEXT', placeholder: 'Sababini yozing...' },
+  { id: '21', code: 'face_id', text: '21. 📸 Face ID / Foto tasdiqlash: O\'zingizning aniq tushgan suratingizni yuboring', type: 'FACE_ID' }
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -65,7 +78,6 @@ async function fetchVacancies() {
 }
 
 function filterVacancies(filter) {
-  // Update active chip
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   event.target.classList.add('active');
 
@@ -173,7 +185,6 @@ function renderCurrentQuestion() {
   if (step) step.textContent = `Bosqich ${currentStepIndex + 1}/${standardQuestions.length}`;
   if (perc) perc.textContent = `${percent}%`;
   
-  // Question 19 Text
   if (qText) qText.textContent = q.text;
 
   const wrapper = document.getElementById('questionInputWrapper');
@@ -208,6 +219,43 @@ function renderCurrentQuestion() {
         }, 180);
       });
     });
+  } else if (q.type === 'MULTI_SELECT') {
+    let currentArr = [];
+    if (typeof candidateAnswers[q.code] === 'string') {
+      currentArr = candidateAnswers[q.code].split(', ').filter(Boolean);
+    } else if (Array.isArray(candidateAnswers[q.code])) {
+      currentArr = candidateAnswers[q.code];
+    }
+
+    wrapper.innerHTML = `
+      <div class="multi-options">
+        ${q.options.map((opt, idx) => {
+          const isSelected = currentArr.includes(opt);
+          return `
+            <button type="button" class="multi-btn ${isSelected ? 'selected' : ''}" data-idx="${idx}">
+              <span>${opt}</span>
+              <span>${isSelected ? '✅' : '◻️'}</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    wrapper.querySelectorAll('.multi-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const idx = parseInt(btn.getAttribute('data-idx'));
+        const opt = q.options[idx];
+        if (currentArr.includes(opt)) {
+          currentArr = currentArr.filter(item => item !== opt);
+        } else {
+          currentArr.push(opt);
+        }
+        candidateAnswers[q.code] = currentArr.join(', ');
+        if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        renderCurrentQuestion();
+      });
+    });
   } else if (q.type === 'FACE_ID') {
     const photoUrl = candidateAnswers['face_id_url'] || '';
     wrapper.innerHTML = `
@@ -236,7 +284,7 @@ function renderCurrentQuestion() {
   } else {
     const val = candidateAnswers[q.code] || '';
     wrapper.innerHTML = `
-      <input type="${q.type === 'NUMBER' ? 'number' : 'text'}" 
+      <input type="text" 
              id="wizardInput" 
              class="custom-input" 
              value="${val}" 
@@ -254,7 +302,7 @@ function renderCurrentQuestion() {
   const btnPrev = document.getElementById('btnPrev');
   const btnNext = document.getElementById('btnNext');
   if (btnPrev) btnPrev.disabled = currentStepIndex === 0;
-  if (btnNext) btnNext.textContent = currentStepIndex === standardQuestions.length - 1 ? 'Topshirish 🚀' : 'Keyingisi →';
+  if (btnNext) btnNext.textContent = currentStepIndex === standardQuestions.length - 1 ? 'Topshirish (Roziman) 🚀' : 'Keyingisi →';
 }
 
 async function handleFaceIdFileSelect(event) {
@@ -288,7 +336,7 @@ async function handleFaceIdFileSelect(event) {
 
   if (btnNext) {
     btnNext.disabled = false;
-    btnNext.textContent = currentStepIndex === standardQuestions.length - 1 ? 'Topshirish 🚀' : 'Keyingisi →';
+    btnNext.textContent = currentStepIndex === standardQuestions.length - 1 ? 'Topshirish (Roziman) 🚀' : 'Keyingisi →';
   }
 }
 
@@ -305,9 +353,32 @@ function prevQuestion() {
 
 async function nextQuestion() {
   const q = standardQuestions[currentStepIndex];
-  if (q.type !== 'CHOICE' && q.type !== 'FACE_ID') {
+  if (q.type !== 'CHOICE' && q.type !== 'FACE_ID' && q.type !== 'MULTI_SELECT') {
     const input = document.getElementById('wizardInput');
     if (input) candidateAnswers[q.code] = input.value;
+  }
+
+  // Smart age or birth year calculation
+  if (q.code === 'age') {
+    const raw = String(candidateAnswers['age'] || '').trim();
+    const currentYear = new Date().getFullYear();
+    const yearMatch = raw.match(/(19\d\d|20\d\d)/);
+    if (yearMatch) {
+      const year = parseInt(yearMatch[1], 10);
+      if (year >= 1950 && year <= currentYear - 10) {
+        const calculatedAge = currentYear - year;
+        candidateAnswers['age'] = `${calculatedAge} yosh (${year}-yil)`;
+      }
+    } else {
+      const ageMatch = raw.match(/^(\d{2})\b/);
+      if (ageMatch) {
+        const ageVal = parseInt(ageMatch[1], 10);
+        if (ageVal >= 14 && ageVal <= 75) {
+          const year = currentYear - ageVal;
+          candidateAnswers['age'] = `${ageVal} yosh (~${year}-yil)`;
+        }
+      }
+    }
   }
 
   if (currentStepIndex < standardQuestions.length - 1) {
@@ -426,7 +497,6 @@ function switchTab(tab, btn) {
     return el && !el.classList.contains('hidden');
   });
 
-  // Update nav
   document.querySelectorAll('.bottom-nav .nav-item').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
 

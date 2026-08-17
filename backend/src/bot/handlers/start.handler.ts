@@ -1,3 +1,6 @@
+import path from 'path';
+import fs from 'fs';
+import { InputFile } from 'grammy';
 import { BotContext } from '../types';
 import { getMainMenuKeyboard, getConsentKeyboard } from '../keyboards';
 import { t } from '../../locales/i18n';
@@ -5,8 +8,6 @@ import { PrismaClient } from '@prisma/client';
 import { config } from '../../config';
 
 const prisma = new PrismaClient();
-
-const LOGO_BANNER_URL = 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1000&q=80';
 
 export async function handleStartCommand(ctx: BotContext) {
   const telegramUserId = ctx.from?.id;
@@ -39,12 +40,34 @@ export async function handleStartCommand(ctx: BotContext) {
 
   const welcomeCaption = t('welcome_msg', lang) + `\n\n💬 <b>Yordam xizmati:</b> @${config.supportUsername}`;
 
+  // Resolve official Marketing Markazi HR banner
+  const localCandidates = [
+    path.resolve(process.cwd(), 'public/banner.jpg'),
+    path.resolve(process.cwd(), 'public/app/banner.jpg'),
+    path.resolve(process.cwd(), 'backend/public/banner.jpg'),
+    path.resolve(process.cwd(), 'backend/public/app/banner.jpg'),
+    path.resolve(process.cwd(), 'dist/banner.jpg'),
+    path.resolve(process.cwd(), 'dist/app/banner.jpg'),
+    path.resolve(process.cwd(), 'public/app/mentor.png'),
+    path.resolve(process.cwd(), 'backend/public/app/mentor.png'),
+  ];
+  let localBannerPath = localCandidates.find(p => fs.existsSync(p));
+
   try {
-    await ctx.replyWithPhoto(LOGO_BANNER_URL, {
-      caption: welcomeCaption,
-      parse_mode: 'HTML',
-      reply_markup: getMainMenuKeyboard(lang),
-    });
+    if (localBannerPath) {
+      await ctx.replyWithPhoto(new InputFile(localBannerPath), {
+        caption: welcomeCaption,
+        parse_mode: 'HTML',
+        reply_markup: getMainMenuKeyboard(lang),
+      });
+    } else {
+      const fallbackUrl = 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1000&q=80';
+      await ctx.replyWithPhoto(fallbackUrl, {
+        caption: welcomeCaption,
+        parse_mode: 'HTML',
+        reply_markup: getMainMenuKeyboard(lang),
+      });
+    }
   } catch (photoErr: any) {
     console.log('⚠️ Photo reply failed, sending text fallback:', photoErr.message);
     try {
@@ -59,16 +82,9 @@ export async function handleStartCommand(ctx: BotContext) {
 }
 
 export async function handleStartAnketa(ctx: BotContext) {
-  const lang = ctx.session.lang || 'uz';
-  ctx.session.step = 'CONSENT';
-
-  await ctx.reply(
-    `<b>${t('consent_title', lang)}</b>\n\n${t('consent_text', lang)}`,
-    {
-      parse_mode: 'HTML',
-      reply_markup: getConsentKeyboard(lang),
-    }
-  );
+  // Move consent to the end of the application! Start with Company/Vacancy directly!
+  ctx.session.companyPage = 1;
+  await renderCompanySelection(ctx, 1);
 }
 
 export async function handleConsentCallback(ctx: BotContext, consent: boolean) {
@@ -76,13 +92,18 @@ export async function handleConsentCallback(ctx: BotContext, consent: boolean) {
 
   if (!consent) {
     ctx.session.step = 'IDLE';
-    await ctx.reply(t('consent_declined', lang), {
+    await ctx.reply('Anketa topshirish bekor qilindi. Bosh menyudasiz.', {
       reply_markup: getMainMenuKeyboard(lang),
     });
     return;
   }
 
-  await renderCompanySelection(ctx, 1);
+  if (ctx.session.step === 'PREVIEW') {
+    const { handleAppSubmit } = await import('./preview.handler');
+    await handleAppSubmit(ctx);
+  } else {
+    await renderCompanySelection(ctx, 1);
+  }
 }
 
 export async function renderCompanySelection(ctx: BotContext, page = 1) {
@@ -107,7 +128,7 @@ export async function renderCompanySelection(ctx: BotContext, page = 1) {
   const lang = ctx.session.lang || 'uz';
 
   let text = `<b>${t('select_company_title', lang)}</b>\n`;
-  text += `📊 Total Companies: <b>${totalCount}</b> | Page <b>${page}</b> of <b>${totalPages}</b>\n\n`;
+  text += `📊 Jami kompaniyalar: <b>${totalCount}</b> | Sahifa <b>${page}</b> / <b>${totalPages}</b>\n\n`;
 
   const { InlineKeyboard } = await import('grammy');
   const keyboard = new InlineKeyboard();
@@ -118,17 +139,17 @@ export async function renderCompanySelection(ctx: BotContext, page = 1) {
 
   const pageRow = [];
   if (page > 1) {
-    pageRow.push(InlineKeyboard.text(`⬅️ ${t('btn_prev_page', lang)}`, `company_page:${page - 1}`));
+    pageRow.push(InlineKeyboard.text(t('btn_prev_page', lang), `company_page:${page - 1}`));
   }
   pageRow.push(InlineKeyboard.text(`📄 ${page}/${totalPages}`, 'noop'));
   if (page < totalPages) {
-    pageRow.push(InlineKeyboard.text(`➡️ ${t('btn_next_page', lang)}`, `company_page:${page + 1}`));
+    pageRow.push(InlineKeyboard.text(t('btn_next_page', lang), `company_page:${page + 1}`));
   }
   keyboard.row(...pageRow);
 
   keyboard.row(
-    InlineKeyboard.text(`🔍 ${t('btn_search_company', lang)}`, 'company_search'),
-    InlineKeyboard.text(`💡 ${t('btn_recommend_me', lang)}`, 'company_recommend')
+    InlineKeyboard.text(t('btn_search_company', lang), 'company_search'),
+    InlineKeyboard.text(t('btn_recommend_me', lang), 'company_recommend')
   );
 
   if (ctx.callbackQuery) {

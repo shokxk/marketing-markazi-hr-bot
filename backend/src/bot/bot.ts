@@ -14,6 +14,9 @@ import {
   handleQuestionAnswer,
   handleQuestionBack,
   handleQuestionCancel,
+  handleToggleMultiSelect,
+  handleConfirmMultiSelect,
+  handleSkipExtraPhone,
 } from './handlers/questionnaire.handler';
 import {
   handleVideoReceived,
@@ -29,8 +32,8 @@ import { handleStatusCheckCommand, handleHelpCommand } from './handlers/status.h
 export function createBotInstance() {
   const bot = new Bot<BotContext>(config.botToken);
 
-  // Global Error Handler (Prevents bot crashes)
-  bot.catch((err) => {
+  // Global Error Handler (Prevents bot crashes & loading spinners)
+  bot.catch(async (err) => {
     const ctx = err.ctx;
     console.error(`⚠️ Error handling update ${ctx.update.update_id}:`);
     const e = err.error;
@@ -41,6 +44,16 @@ export function createBotInstance() {
     } else {
       console.error("Unknown bot error:", e);
     }
+
+    try {
+      if (ctx.callbackQuery) {
+        await ctx.answerCallbackQuery({ text: '⚠️ Xatolik yuz berdi. Qayta urinib ko\'ring.', show_alert: false });
+      }
+    } catch {}
+
+    try {
+      await ctx.reply("⚠️ Texnik xatolik yuz berdi. Qayta boshlash uchun /start buyrug'ini bosing.");
+    } catch {}
   });
 
   // Configure session middleware
@@ -52,6 +65,7 @@ export function createBotInstance() {
         companyPage: 1,
         currentQuestionIndex: 1,
         answers: {},
+        currentMultiSelectAnswers: [],
       }),
     })
   );
@@ -76,7 +90,7 @@ export function createBotInstance() {
   });
 
   // Hears listeners for bottom main menu buttons (flexible apostrophes)
-  bot.hears(/Anketani boshlash/i, handleStartAnketa);
+  bot.hears([/Anketani boshlash/i, /Anketa/i, /📝/i], handleStartAnketa);
   bot.hears(/Arizam holati/i, handleStatusCheckCommand);
   bot.hears(/Yordam/i, handleHelpCommand);
   bot.hears(/Bo['‘`’]?sh ish o['‘`’]?rinlari/i, async (ctx) => {
@@ -113,8 +127,24 @@ export function createBotInstance() {
     await handleSelectVacancy(ctx, ctx.match[1]);
   });
 
+  bot.callbackQuery(/^force_reapply:(.+)$/, async (ctx) => {
+    await handleSelectVacancy(ctx, ctx.match[1], true);
+  });
+
+  bot.callbackQuery('back_to_companies', async (ctx) => {
+    const { renderCompanySelection } = await import('./handlers/start.handler');
+    await renderCompanySelection(ctx, 1);
+  });
+
   bot.callbackQuery('question_back', handleQuestionBack);
   bot.callbackQuery('question_cancel', handleQuestionCancel);
+
+  // Multi-select and Extra Phone Callbacks
+  bot.callbackQuery(/^toggle_multi:(\d+)$/, async (ctx) => {
+    await handleToggleMultiSelect(ctx, ctx.match[1]);
+  });
+  bot.callbackQuery('confirm_multi', handleConfirmMultiSelect);
+  bot.callbackQuery('skip_extra_phone', handleSkipExtraPhone);
 
   bot.callbackQuery('video_sample', handleVideoSample);
   bot.callbackQuery('skip_video', handleSkipVideo);
@@ -175,6 +205,14 @@ export function createBotInstance() {
     if (ctx.session.step === 'QUESTIONNAIRE') {
       if (text.includes('Bekor qilish')) {
         await handleQuestionCancel(ctx);
+        return;
+      }
+      if (text.includes('Orqaga')) {
+        await handleQuestionBack(ctx);
+        return;
+      }
+      if (text.includes('O\'tkazib yuborish') || text.toLowerCase() === 'skip') {
+        await handleSkipExtraPhone(ctx);
         return;
       }
       await handleQuestionAnswer(ctx, text);

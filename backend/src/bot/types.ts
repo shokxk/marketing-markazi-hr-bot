@@ -39,6 +39,7 @@ export interface SessionData {
   // Questionnaire state
   currentQuestionIndex: number;
   answers: Record<string, any>; // questionCode -> answer
+  currentMultiSelectAnswers?: string[];
 
   // Video metadata
   videoFileId?: string;

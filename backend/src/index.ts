@@ -23,7 +23,16 @@ process.on('unhandledRejection', (reason: any) => {
 
 const app = express();
 
-app.use(cors());
+// Trust proxy for Render/Cloudflare behind load balancer
+app.set('trust proxy', 1);
+
+// Bulletproof CORS policy for Telegram Mini App & Admin Panel
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -35,6 +44,9 @@ const noCache = (_req: any, res: any, next: any) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
+  res.removeHeader('X-Frame-Options');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org https://*.t.me;");
   next();
 };
 
@@ -85,20 +97,20 @@ app.get('/admin', (req, res) => {
   res.status(404).send('Admin panel file not found');
 });
 
-// Self Keep-Alive Pinger (Pings every 1.5 minutes — 100% prevents Render from sleeping)
+// Optimized 24/7 Keep-Alive Pinger (Pings every 4 minutes — prevents Render sleep without Cloudflare rate limits)
 const RENDER_APP_URL = process.env.RENDER_EXTERNAL_URL || 'https://marketing-markazi-hr-bot.onrender.com';
 setInterval(async () => {
   try {
     const axios = (await import('axios')).default;
-    await Promise.all([
-      axios.get(`${RENDER_APP_URL}/health`, { timeout: 8000 }),
-      axios.get(`${RENDER_APP_URL}/app`, { timeout: 8000 })
-    ]);
-    console.log(`⏰ Keep-alive ping sent to ${RENDER_APP_URL} — Server active 24/7/365`);
+    await axios.get(`${RENDER_APP_URL}/health`, {
+      timeout: 8000,
+      headers: { 'User-Agent': 'MarketingMarkaziHRBot-KeepAlive/1.0' }
+    });
+    console.log(`⏰ Keep-alive ping sent to ${RENDER_APP_URL}/health — Server 100% active 24/7`);
   } catch (err: any) {
     // Non-blocking catch
   }
-}, 1.5 * 60 * 1000);
+}, 4 * 60 * 1000);
 
 // Root redirect to Mini App
 app.get('/', (req, res) => {
@@ -685,36 +697,39 @@ async function autoSeed() {
       console.log('✅ Rich Flourenza Call Center Sotuv Menejeri vacancy created!');
     }
 
-    // Seed 20 Standard Questions for Telegram Chat-Bot if empty
-    const questionCount = await prisma.question.count();
-    if (questionCount === 0) {
-      const questions = [
-        { code: 'Q1_FULL_NAME', textUz: '1. Sizning to\'liq ismingiz (F.I.Sh.)?', answerType: 'TEXT', sortOrder: 1 },
-        { code: 'Q2_PHONE', textUz: '2. Bog\'lanish uchun telefon raqamingiz?', answerType: 'PHONE', sortOrder: 2 },
-        { code: 'Q3_AGE', textUz: '3. Yoshingiz nechada? (20 – 35 yosh ayol nomzod)', answerType: 'NUMBER', sortOrder: 3 },
-        { code: 'Q4_CITY', textUz: '4. Yashash shahringiz va tumaningiz?', answerType: 'TEXT', sortOrder: 4 },
-        { code: 'Q5_MARITAL_STATUS', textUz: '5. Oilaviy ahvolingiz?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Turmush qurmagan', 'Turmush qurgan (farzandli)', 'Farqi yo\'q']), sortOrder: 5 },
-        { code: 'Q6_EDUCATION_LEVEL', textUz: '6. Ma\'lumotingiz darajasi?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Oliy (Bakalavr/Magistr)', 'O\'rta maxsus (Kollej/Litsey)', 'O\'rta maktab']), sortOrder: 6 },
-        { code: 'Q7_EDUCATION_PLACE', textUz: '7. Qaysi o\'quv muassasasini tamomlagansiz?', answerType: 'TEXT', sortOrder: 7 },
-        { code: 'Q8_CALLCENTER_EXP', textUz: '8. Call Center yoki Sotuv sohasida tajribangiz bormi?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Ha, 6-12 oy tajribam bor', 'Ha, 1 yildan ortiq tajribam bor', 'Yo\'q, lekin tez o\'rganaman']), sortOrder: 8 },
-        { code: 'Q9_LAST_JOB', textUz: '9. Oxirgi ish joyingiz va lavozimingiz?', answerType: 'TEXT', sortOrder: 9 },
-        { code: 'Q10_REASON_LEAVING', textUz: '10. Oxirgi ish joyingizdan ketish sababi?', answerType: 'TEXT', sortOrder: 10 },
-        { code: 'Q11_AMOCRM_EXP', textUz: '11. amoCRM va kompyuter dasturlari bilan ishlaganmisiz?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Ha, amoCRM bilan mukammal ishlayman', 'Kompyuterni bilaman, amoCRM o\'rganaman', 'Yo\'q, yangi o\'rganaman']), sortOrder: 11 },
-        { code: 'Q12_COMPUTER_SKILLS', textUz: '12. Qaysi kompyuter dasturlarini bilasiz?', answerType: 'TEXT', sortOrder: 12 },
-        { code: 'Q13_LANGUAGES', textUz: '13. Qaysi tillarda ravon muloqot qilasiz?', answerType: 'CHOICE', optionsJson: JSON.stringify(['O\'zbek tili — Mukammal', 'O\'zbek va Rus tili — Erkin muloqot']), sortOrder: 13 },
-        { code: 'Q14_WORK_SCHEDULE', textUz: '14. 6/1 grafik va smenalarga tayyormisiz?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Ha, to\'liq tayyorman', 'Grafik bo\'yicha savollarim bor']), sortOrder: 14 },
-        { code: 'Q15_SALARY_EXPECTATION', textUz: '15. Kutilayotgan oylik maosh?', answerType: 'TEXT', sortOrder: 15 },
-        { code: 'Q16_START_DATE', textUz: '16. Qachondan ishni boshlashingiz mumkin?', answerType: 'TEXT', sortOrder: 16 },
-        { code: 'Q17_SALES_CASE', textUz: '17. E\'tirozlar bilan ishlash: Mijoz "Qimmat" desa nima degan bo\'lardingiz?', answerType: 'TEXT', sortOrder: 17 },
-        { code: 'Q18_SOFT_SKILLS', textUz: '18. O\'zingizdagi eng kuchli 3 ta sifatni ko\'rsating', answerType: 'TEXT', sortOrder: 18 },
-        { code: 'Q19_MOTIVATION', textUz: '19. Nega aynan ushbu kompaniya jamoasida ishlamoqchisiz?', answerType: 'TEXT', sortOrder: 19 },
-        { code: 'Q20_SELF_INTRO', textUz: '20. 📸 Face ID / Foto: O\'zingizning aniq tushgan suratingizni yuboring', answerType: 'TEXT', sortOrder: 20 },
-      ];
-      for (const qData of questions) {
+    // Sync / Upsert 21 Standard Questions for Telegram Chat-Bot
+    const questions = [
+      { code: 'Q1_FULL_NAME', textUz: '1. Sizning to\'liq ismingiz (F.I.Sh.)?', answerType: 'TEXT', sortOrder: 1 },
+      { code: 'Q2_PHONE', textUz: '2. Bog\'lanish uchun asosiy telefon raqamingiz?', answerType: 'PHONE', sortOrder: 2 },
+      { code: 'Q2B_EXTRA_PHONE', textUz: '3. Qo\'shimcha (zaxira) telefon raqamingiz? (Ixtiyoriy)', answerType: 'EXTRA_PHONE', sortOrder: 3 },
+      { code: 'Q3_AGE', textUz: '4. Yoshingiz yoki tug\'ilgan yilingiz? (Masalan: 24 yoki 2002)', answerType: 'AGE_OR_YEAR', sortOrder: 4 },
+      { code: 'Q4_CITY', textUz: '5. Yashash shahringiz va tumaningiz?', answerType: 'TEXT', sortOrder: 5 },
+      { code: 'Q5_MARITAL_STATUS', textUz: '6. Oilaviy ahvolingiz?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Turmush qurmagan', 'Turmush qurgan (farzandli)', 'Farqi yo\'q']), sortOrder: 6 },
+      { code: 'Q6_EDUCATION_LEVEL', textUz: '7. Ma\'lumotingiz darajasi?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Oliy (Bakalavr/Magistr)', 'O\'rta maxsus (Kollej/Litsey)', 'O\'rta maktab']), sortOrder: 7 },
+      { code: 'Q7_EDUCATION_PLACE', textUz: '8. Qaysi o\'quv muassasasini tamomlagansiz?', answerType: 'TEXT', sortOrder: 8 },
+      { code: 'Q8_CALLCENTER_EXP', textUz: '9. Call Center yoki Sotuv sohasida tajribangiz bormi?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Ha, 6-12 oy tajribam bor', 'Ha, 1 yildan ortiq tajribam bor', 'Yo\'q, lekin tez o\'rganaman']), sortOrder: 9 },
+      { code: 'Q9_LAST_JOB', textUz: '10. Oxirgi ish joyingiz va lavozimingiz?', answerType: 'TEXT', sortOrder: 10 },
+      { code: 'Q10_REASON_LEAVING', textUz: '11. Oxirgi ish joyingizdan ketish sababi?', answerType: 'TEXT', sortOrder: 11 },
+      { code: 'Q11_AMOCRM_EXP', textUz: '12. amoCRM va kompyuter dasturlari bilan ishlaganmisiz?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Ha, amoCRM bilan mukammal ishlayman', 'Kompyuterni bilaman, amoCRM o\'rganaman', 'Yo\'q, yangi o\'rganaman']), sortOrder: 12 },
+      { code: 'Q12_COMPUTER_SKILLS', textUz: '13. Qaysi kompyuter dasturlarini bilasiz? (Bir nechtasini tanlang 👇)', answerType: 'MULTISELECT', optionsJson: JSON.stringify(['MS Word & Excel', '1C Buxgalteriya', 'amoCRM / Bitrix24', 'Photoshop / Grafik dasturlar', 'Kompyuterni yaxshi bilaman', 'Boshlang\'ich (o\'rganaman)']), sortOrder: 13 },
+      { code: 'Q13_LANGUAGES', textUz: '14. Qaysi tillarda ravon muloqot qilasiz? (Bir nechtasini tanlang 👇)', answerType: 'MULTISELECT', optionsJson: JSON.stringify(['O\'zbek tili (Ona tili)', 'Rus tili (Erkin muloqot)', 'Rus tili (O\'rtacha / Tushunaman)', 'Ingliz tili (Erkin)', 'Ingliz tili (Boshlang\'ich)', 'Tojik tili / Boshqa']), sortOrder: 14 },
+      { code: 'Q14_WORK_SCHEDULE', textUz: '15. 6/1 grafik va smenalarga tayyormisiz?', answerType: 'CHOICE', optionsJson: JSON.stringify(['Ha, to\'liq tayyorman', 'Grafik bo\'yicha savollarim bor']), sortOrder: 15 },
+      { code: 'Q15_SALARY_EXPECTATION', textUz: '16. Kutilayotgan oylik maosh?', answerType: 'TEXT', sortOrder: 16 },
+      { code: 'Q16_START_DATE', textUz: '17. Qachondan ishni boshlashingiz mumkin?', answerType: 'TEXT', sortOrder: 17 },
+      { code: 'Q17_SALES_CASE', textUz: '18. E\'tirozlar bilan ishlash: Mijoz "Qimmat" desa nima degan bo\'lardingiz?', answerType: 'TEXT', sortOrder: 18 },
+      { code: 'Q18_SOFT_SKILLS', textUz: '19. O\'zingizdagi eng kuchli 3 ta sifatni ko\'rsating', answerType: 'TEXT', sortOrder: 19 },
+      { code: 'Q19_MOTIVATION', textUz: '20. Nega aynan ushbu kompaniya jamoasida ishlamoqchisiz?', answerType: 'TEXT', sortOrder: 20 },
+      { code: 'Q20_SELF_INTRO', textUz: '21. 📸 Face ID / Foto: O\'zingizning aniq tushgan suratingizni yuboring', answerType: 'TEXT', sortOrder: 21 },
+    ];
+    for (const qData of questions) {
+      const existing = await prisma.question.findFirst({ where: { code: qData.code } });
+      if (existing) {
+        await prisma.question.update({ where: { id: existing.id }, data: qData });
+      } else {
         await prisma.question.create({ data: qData });
       }
-      console.log('✅ 20 Standard questions auto-seeded into DB!');
     }
+    console.log('✅ 21 Standard questions synchronized in DB!');
 
     await prisma.$disconnect();
   } catch (err: any) {
@@ -731,10 +746,10 @@ async function startBotEngine() {
 
   const bot = createBotInstance();
 
-  // 1. Delete any existing webhook to ensure clean long-polling
+  // 1. Delete any existing webhook to ensure clean long-polling & drop any stuck old updates
   try {
-    await bot.api.deleteWebhook({ drop_pending_updates: false });
-    console.log('🧹 Cleared legacy Telegram webhook for clean long-polling');
+    await bot.api.deleteWebhook({ drop_pending_updates: true });
+    console.log('🧹 Cleared legacy Telegram webhook and flushed pending updates for clean long-polling');
   } catch (whErr: any) {
     console.log('Webhook cleanup info:', whErr.message);
   }

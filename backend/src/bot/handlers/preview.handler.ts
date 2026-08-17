@@ -12,9 +12,10 @@ export async function startPreviewStep(ctx: BotContext) {
   const companyName = ctx.session.selectedCompanyName || 'Flourenza';
   const vacancyName = ctx.session.selectedVacancyName || 'Call Center Sotuv Menejeri';
 
-  // Map the ACTUAL question codes used in questionnaire.handler.ts FALLBACK_QUESTIONS
+  // Map the ACTUAL question codes
   const fullName    = answers['Q1_FULL_NAME']          || 'Ko\'rsatilmadi';
   const phone       = answers['Q2_PHONE']              || 'Ko\'rsatilmadi';
+  const extraPhone  = answers['Q2B_EXTRA_PHONE']        || 'Kiritilmadi';
   const age         = answers['Q3_AGE']                || 'Ko\'rsatilmadi';
   const city        = answers['Q4_CITY']               || 'Ko\'rsatilmadi';
   const marital     = answers['Q5_MARITAL_STATUS']     || 'Ko\'rsatilmadi';
@@ -23,31 +24,38 @@ export async function startPreviewStep(ctx: BotContext) {
   const callExp     = answers['Q8_CALLCENTER_EXP']     || 'Ko\'rsatilmadi';
   const lastJob     = answers['Q9_LAST_JOB']           || 'Ko\'rsatilmadi';
   const amocrm      = answers['Q11_AMOCRM_EXP']        || 'Ko\'rsatilmadi';
+  const computer    = answers['Q12_COMPUTER_SKILLS']   || 'Ko\'rsatilmadi';
+  const languages   = answers['Q13_LANGUAGES']         || 'Ko\'rsatilmadi';
   const salary      = answers['Q15_SALARY_EXPECTATION']|| 'Ko\'rsatilmadi';
   const startDate   = answers['Q16_START_DATE']        || 'Ko\'rsatilmadi';
-  const salesCase   = answers['Q17_SALES_CASE']        || 'Ko\'rsatilmadi';
   const motivation  = answers['Q19_MOTIVATION']        || 'Ko\'rsatilmadi';
   const faceId      = answers['Q20_SELF_INTRO']        || (ctx.session.videoFileId ? 'Foto/Video yuborildi ✅' : 'Yuborilmadi');
 
   const summary =
-    `<b>Ma'lumotlaringizni tekshiring 📋</b>\n\n` +
+    `<b>📋 Ma'lumotlaringizni tekshiring</b>\n\n` +
     `🏢 <b>Kompaniya:</b> ${companyName}\n` +
     `💼 <b>Vakansiya:</b> ${vacancyName}\n` +
     `━━━━━━━━━━━━━━━━━━━━━\n` +
     `👤 <b>F.I.O.:</b> ${fullName}\n` +
-    `📱 <b>Telefon:</b> ${phone}\n` +
-    `🎂 <b>Yosh:</b> ${age}\n` +
+    `📱 <b>Asosiy telefon:</b> <code>${phone}</code>\n` +
+    `📞 <b>Qo'shimcha telefon:</b> ${extraPhone}\n` +
+    `🎂 <b>Yosh / Tug'ilgan yil:</b> ${age}\n` +
     `📍 <b>Shahar:</b> ${city}\n` +
     `💍 <b>Oilaviy holat:</b> ${marital}\n` +
     `🎓 <b>Ta'lim:</b> ${education}\n` +
     `🏫 <b>O'quv muassasa:</b> ${eduPlace}\n` +
-    `📞 <b>Call Center tajriba:</b> ${callExp}\n` +
+    `📞 <b>Sotuv / Call Center:</b> ${callExp}\n` +
     `💼 <b>Oxirgi ish:</b> ${lastJob}\n` +
     `💻 <b>amoCRM tajriba:</b> ${amocrm}\n` +
+    `🖥 <b>Kompyuter dasturlari:</b> ${computer}\n` +
+    `🌐 <b>Tillar:</b> ${languages}\n` +
     `💰 <b>Kutilayotgan maosh:</b> ${salary}\n` +
     `📅 <b>Ishga chiqish:</b> ${startDate}\n` +
     `🎯 <b>Motivatsiya:</b> ${motivation.substring(0, 80)}${motivation.length > 80 ? '...' : ''}\n` +
-    `📸 <b>Face ID / Foto:</b> ${faceId}\n`;
+    `📸 <b>Face ID / Video:</b> ${faceId}\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━━\n` +
+    `⚠️ <b>Shaxsiy ma'lumotlarga rozilik:</b>\n` +
+    `<i>Arizani yuborish orqali siz taqdim etgan ma'lumotlaringizni ishga qabul qilish jarayonida ko'rib chiqilishiga va kompaniya vakillariga taqdim etilishiga rozilik bildirasiz.</i>\n`;
 
   const keyboard = getPreviewKeyboard(ctx.session.lang);
 
@@ -58,7 +66,6 @@ export async function startPreviewStep(ctx: BotContext) {
       await ctx.reply(summary, { parse_mode: 'HTML', reply_markup: keyboard });
     }
   } catch (e) {
-    // If edit fails (e.g. message too old), send new message
     await ctx.reply(summary, { parse_mode: 'HTML', reply_markup: keyboard });
   }
 }
@@ -107,6 +114,7 @@ export async function handleAppSubmit(ctx: BotContext) {
           completionPercent: 100,
           submittedAt: new Date(),
           userId: dbUser.id,
+          consentGiven: true,
         },
         include: { company: true, vacancy: true },
       });
@@ -151,8 +159,9 @@ export async function handleAppSubmit(ctx: BotContext) {
   // Question Code to Uzbek Label Translator
   const QUESTION_LABELS: Record<string, string> = {
     Q1_FULL_NAME: 'To\'liq ism (F.I.Sh.)',
-    Q2_PHONE: 'Telefon raqam',
-    Q3_AGE: 'Yosh',
+    Q2_PHONE: 'Asosiy telefon',
+    Q2B_EXTRA_PHONE: 'Qo\'shimcha telefon',
+    Q3_AGE: 'Yosh / Tug\'ilgan yil',
     Q4_CITY: 'Yashash shahri',
     Q5_MARITAL_STATUS: 'Oilaviy ahvoli',
     Q6_EDUCATION_LEVEL: 'Ma\'lumoti darajasi',
@@ -160,7 +169,7 @@ export async function handleAppSubmit(ctx: BotContext) {
     Q8_CALLCENTER_EXP: 'Call Center / Sotuv tajribasi',
     Q9_LAST_JOB: 'Oxirgi ish joyi va lavozimi',
     Q10_REASON_LEAVING: 'Ishdan ketish sababi',
-    Q11_AMOCRM_EXP: 'amoCRM va kompyuter tajribasi',
+    Q11_AMOCRM_EXP: 'amoCRM tajribasi',
     Q12_COMPUTER_SKILLS: 'Kompyuter dasturlari',
     Q13_LANGUAGES: 'Biladigan tillari',
     Q14_WORK_SCHEDULE: 'Ish grafigiga tayyorlik',
@@ -228,6 +237,7 @@ export async function handleAppSubmit(ctx: BotContext) {
   // Reset session
   ctx.session.step = 'IDLE';
   ctx.session.answers = {};
+  ctx.session.currentMultiSelectAnswers = [];
   ctx.session.applicationId = undefined;
   ctx.session.videoFileId = undefined;
   ctx.session.selectedCompanyId = undefined;
@@ -253,8 +263,8 @@ export async function handleAppSubmit(ctx: BotContext) {
 export async function handleAppEditPrompt(ctx: BotContext) {
   if (ctx.callbackQuery) await ctx.answerCallbackQuery();
 
-  // Simply go back to question 1 so user can re-fill from start
   ctx.session.currentQuestionIndex = 1;
+  ctx.session.currentMultiSelectAnswers = [];
 
   const { renderQuestion } = await import('./questionnaire.handler');
   await renderQuestion(ctx);
