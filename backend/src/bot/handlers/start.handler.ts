@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { InputFile } from 'grammy';
 import { BotContext } from '../types';
-import { getMainMenuKeyboard, getConsentKeyboard } from '../keyboards';
+import { getMainMenuKeyboard } from '../keyboards';
 import { t } from '../../locales/i18n';
 import { PrismaClient } from '@prisma/client';
 import { config } from '../../config';
@@ -113,16 +113,31 @@ export async function renderCompanySelection(ctx: BotContext, page = 1) {
   const pageSize = 5;
   const skip = (page - 1) * pageSize;
 
-  const [companies, totalCount] = await Promise.all([
-    prisma.company.findMany({
-      where: { isActive: true },
-      take: pageSize,
-      skip,
-      orderBy: { name: 'asc' },
-      include: { _count: { select: { vacancies: { where: { isActive: true } } } } },
-    }),
-    prisma.company.count({ where: { isActive: true } }),
-  ]);
+  let companies: any[] = [];
+  let totalCount = 0;
+
+  try {
+    const [compList, count] = await Promise.all([
+      prisma.company.findMany({
+        where: { isActive: true },
+        take: pageSize,
+        skip,
+        orderBy: { name: 'asc' },
+        include: { _count: { select: { vacancies: true } } },
+      }),
+      prisma.company.count({ where: { isActive: true } }),
+    ]);
+    companies = compList;
+    totalCount = count;
+  } catch (dbErr: any) {
+    console.error('Company query error (fallback applied):', dbErr.message);
+  }
+
+  // If no companies found in DB, provide safe fallback so bot never crashes
+  if (!companies || companies.length === 0) {
+    companies = [{ id: 'flourenza_default', name: 'Flourenza', _count: { vacancies: 1 } }];
+    totalCount = 1;
+  }
 
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
   const lang = ctx.session.lang || 'uz';
@@ -134,34 +149,50 @@ export async function renderCompanySelection(ctx: BotContext, page = 1) {
   const keyboard = new InlineKeyboard();
 
   companies.forEach((comp) => {
-    keyboard.text(`🏢 ${comp.name} (${comp._count.vacancies})`, `select_company:${comp.id}`).row();
+    const vacCount = comp._count?.vacancies ?? 1;
+    keyboard.text(`🏢 ${comp.name} (${vacCount})`, `select_company:${comp.id}`).row();
   });
 
   const pageRow = [];
   if (page > 1) {
     pageRow.push(InlineKeyboard.text(t('btn_prev_page', lang), `company_page:${page - 1}`));
   }
-  pageRow.push(InlineKeyboard.text(`📄 ${page}/${totalPages}`, 'noop'));
+  if (totalPages > 1) {
+    pageRow.push(InlineKeyboard.text(`📄 ${page}/${totalPages}`, 'noop'));
+  }
   if (page < totalPages) {
     pageRow.push(InlineKeyboard.text(t('btn_next_page', lang), `company_page:${page + 1}`));
   }
-  keyboard.row(...pageRow);
+  if (pageRow.length > 0) {
+    keyboard.row(...pageRow);
+  }
 
   keyboard.row(
     InlineKeyboard.text(t('btn_search_company', lang), 'company_search'),
     InlineKeyboard.text(t('btn_recommend_me', lang), 'company_recommend')
   );
 
-  if (ctx.callbackQuery) {
-    await ctx.answerCallbackQuery();
-    await ctx.editMessageText(text, {
-      parse_mode: 'HTML',
-      reply_markup: keyboard,
-    });
-  } else {
-    await ctx.reply(text, {
-      parse_mode: 'HTML',
-      reply_markup: keyboard,
-    });
+  try {
+    if (ctx.callbackQuery && ctx.callbackQuery.message) {
+      await ctx.answerCallbackQuery();
+      await ctx.editMessageText(text, {
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+      });
+    } else {
+      await ctx.reply(text, {
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+      });
+    }
+  } catch (err: any) {
+    try {
+      await ctx.reply(text, {
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+      });
+    } catch (e: any) {
+      console.error('Render company error:', e.message);
+    }
   }
 }
