@@ -152,6 +152,35 @@ export async function handleAppSubmit(ctx: BotContext) {
     } catch (amoErr: any) {
       console.error('amoCRM Bot Sync error:', amoErr.message);
     }
+
+    // Save to Permanent JSON Application Backup file
+    try {
+      const fs = await import('fs');
+      const pathMod = await import('path');
+      const backupDir = pathMod.resolve(process.cwd(), 'data');
+      if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+      const backupFile = pathMod.join(backupDir, 'backup_applications.json');
+      let existingBackups: any[] = [];
+      if (fs.existsSync(backupFile)) {
+        try {
+          existingBackups = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
+        } catch {}
+      }
+      existingBackups.push({
+        appNumber,
+        companyName,
+        vacancyName,
+        candidateName,
+        phone,
+        city,
+        answers,
+        submittedAt: new Date().toISOString()
+      });
+      fs.writeFileSync(backupFile, JSON.stringify(existingBackups, null, 2), 'utf8');
+      console.log(`💾 Application ${appNumber} permanently backed up to JSON!`);
+    } catch (bkErr: any) {
+      console.error('Backup write error:', bkErr.message);
+    }
   } catch (dbErr: any) {
     console.error('App submit DB error:', dbErr.message);
   }

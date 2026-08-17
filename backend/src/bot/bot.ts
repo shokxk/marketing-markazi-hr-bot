@@ -70,6 +70,46 @@ export function createBotInstance() {
     })
   );
 
+  // Automatic Draft Session Hydration Middleware (Prevents lost answers on server restart)
+  bot.use(async (ctx, next) => {
+    if (ctx.from?.id && ctx.session && (!ctx.session.applicationId || ctx.session.step === 'IDLE')) {
+      try {
+        const { PrismaClient } = await import('@prisma/client');
+        const prisma = new PrismaClient();
+        const user = await prisma.user.findUnique({
+          where: { telegramUserId: BigInt(ctx.from.id) },
+          include: {
+            applications: {
+              where: { status: 'DRAFT' },
+              include: { answers: { include: { question: true } }, company: true, vacancy: true },
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+            },
+          },
+        });
+        if (user?.applications?.[0]) {
+          const draft = user.applications[0];
+          if (Object.keys(ctx.session.answers || {}).length === 0 && draft.answers?.length > 0) {
+            ctx.session.applicationId = draft.id;
+            ctx.session.selectedCompanyId = draft.companyId;
+            ctx.session.selectedCompanyName = draft.company?.name;
+            ctx.session.selectedVacancyId = draft.vacancyId;
+            ctx.session.selectedVacancyName = draft.vacancy?.title;
+            ctx.session.currentQuestionIndex = draft.currentStep || (draft.answers.length + 1);
+            for (const a of draft.answers) {
+              const qKey = a.question?.code || a.questionId;
+              ctx.session.answers[qKey] = a.answerText || '';
+            }
+          }
+        }
+        await prisma.$disconnect();
+      } catch (e) {
+        // Non-blocking catch
+      }
+    }
+    await next();
+  });
+
   // Command listeners
   bot.command('start', handleStartCommand);
   bot.command('status', handleStatusCheckCommand);

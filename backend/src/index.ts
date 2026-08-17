@@ -731,6 +731,53 @@ async function autoSeed() {
     }
     console.log('✅ 21 Standard questions synchronized in DB!');
 
+    // Restore applications from permanent JSON backup if missing in DB
+    try {
+      const fs = await import('fs');
+      const pathMod = await import('path');
+      const backupFile = pathMod.resolve(process.cwd(), 'data/backup_applications.json');
+      if (fs.existsSync(backupFile)) {
+        const backups: any[] = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
+        for (const bk of backups) {
+          const exists = await prisma.application.findUnique({ where: { applicationNumber: bk.appNumber } });
+          if (!exists) {
+            let user = await prisma.user.findFirst({ where: { phone: bk.phone } });
+            if (!user) {
+              user = await prisma.user.create({
+                data: {
+                  telegramUserId: BigInt(Math.floor(100000000 + Math.random() * 900000000)),
+                  fullName: bk.candidateName,
+                  phone: bk.phone,
+                  city: bk.city,
+                  language: 'uz'
+                }
+              });
+            }
+            const fallbackVac = await prisma.vacancy.findFirst();
+            if (fallbackVac) {
+              await prisma.application.create({
+                data: {
+                  applicationNumber: bk.appNumber,
+                  userId: user.id,
+                  companyId: fallbackVac.companyId,
+                  vacancyId: fallbackVac.id,
+                  status: 'NEW',
+                  currentStep: 21,
+                  completionPercent: 100,
+                  source: 'Telegram Bot Backup',
+                  consentGiven: true,
+                  submittedAt: new Date(bk.submittedAt || Date.now())
+                }
+              });
+            }
+          }
+        }
+        console.log(`✅ Verified/Restored ${backups.length} applications from backup!`);
+      }
+    } catch (bkRestErr: any) {
+      console.log('Backup restore info:', bkRestErr.message);
+    }
+
     await prisma.$disconnect();
   } catch (err: any) {
     console.error('⚠️ Auto-seed info:', err.message);
