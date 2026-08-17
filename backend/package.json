@@ -4,11 +4,11 @@
   "description": "Backend API, Telegram Bot engine, and queue workers for Marketing Markazi HR Bot",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc --skipLibCheck && copyfiles -u 1 src/locales/**/* dist/ && copyfiles -u 1 public/**/* dist/",
+    "build": "npx prisma generate --schema=./prisma/schema.prisma && npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss && tsc --skipLibCheck && copyfiles -u 1 src/locales/**/* dist/ && copyfiles -u 1 public/**/* dist/",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "test": "ts-node tests/run-tests.ts",
-    "start": "node dist/index.js",
+    "start": "npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss && node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev --name init",

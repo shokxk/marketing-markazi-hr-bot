@@ -929,6 +929,17 @@ async function startBotEngine() {
 // Start Express Server & Launch Bot
 app.listen(config.port, async () => {
   console.log(`🚀 Marketing Markazi HR Backend API running on port ${config.port}`);
+  
+  // Ensure SQLite schema tables are created in database
+  try {
+    const { execSync } = await import('child_process');
+    console.log('🔄 Ensuring SQLite database schema is synchronized...');
+    execSync('npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss', { stdio: 'inherit' });
+    console.log('✅ SQLite database schema synchronized successfully!');
+  } catch (dbSyncErr: any) {
+    console.error('⚠️ DB schema sync info (non-blocking):', dbSyncErr.message);
+  }
+
   autoSeed().catch(e => console.error('Auto-seed error:', e.message));
   startBotEngine().catch(e => console.error('Bot launch error:', e.message));
 });
